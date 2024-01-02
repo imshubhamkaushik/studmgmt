@@ -1,21 +1,25 @@
 // Import necessary modules
 import express from "express";
-import { connect, Schema, model } from "mongoose";
+import mongoose from "mongoose";
 import pkg from "body-parser";
+
+// const express = require('express')
+// const mongoose = require('mongoose')
+// const bodyParser = require('body-parser')
 
 // Create an Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
-const { json } = pkg;
+// const { json } = pkg;
 
 // Middleware to parse incoming JSON requests
-app.use(json());
+app.use(bodyParser.json());
 
 // Middleware to serve static files from the "public" directory
 app.use(express.static("public"));
 
-// Connect to MongoDB
-connect("mongodb://localhost:27017/studDB", {
+// MongoDB connection
+mongoose.connect("mongodb://localhost:27017/studDB", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });

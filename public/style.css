@@ -1,4 +1,4 @@
-body{
+/* body{
     font-family: Arial, Helvetica, sans-serif;
     margin: 20px;
 }
@@ -36,4 +36,17 @@ button{
 
 .studItem button{
     margin-left: 10px;
+} */
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+#studForm {
+    max-width: 400px;
+    margin: auto;
+}
+
+#studList {
+    max-width: 600px;
+    margin: auto;
 }

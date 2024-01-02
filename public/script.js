@@ -16,7 +16,9 @@ function getStudents() {
         studentsList.appendChild(listItem);
       });
     })
-    .catch((err) => console.error("Error: ", err));
+    .catch((err) => {
+      console.error("Error: ", err);
+    });
 }
 
 function addStud() {
