@@ -1,0 +1,39 @@
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 20px;
+}
+
+h1,h2{
+    color: #333;
+}
+
+#studForm{
+    margin-bottom: 20px;
+}
+
+label{
+    display: block;
+    margin-bottom: 5px;
+}
+
+input{
+    margin-bottom: 10px;
+}
+
+button{
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+#student{
+    list-style: none;
+    padding: 0;
+}
+
+.studItem{
+    margin-bottom: 10px;
+}
+
+.studItem button{
+    margin-left: 10px;
+}
