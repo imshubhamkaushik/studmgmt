@@ -1,11 +1,12 @@
 // Import necessary modules
 import express from "express";
 import { connect, Schema, model } from "mongoose";
-import { json } from "body-parser";
+import pkg from "body-parser";
 
 // Create an Express application
 const app = express();
 const PORT = process.env.PORT || 3000;
+const { json } = pkg;
 
 // Middleware to parse incoming JSON requests
 app.use(json());

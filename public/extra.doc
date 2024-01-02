@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Student Management System</h1>
+
+    <div id="studForm">
+        <label for="name">Name: </label>
+        <input type="text" id="name" required>
+        <label for="rollNo">Roll Number: </label>
+        <input type="number" id="rollNo" required>
+        <label for="class">Class: </label>
+        <input type="text" id="class" required>
+        <label for="dob">Date of Birth: </label>
+        <input type="date" id="dob" required>
+        <button onclick="addStud()">Add Student</button>
+    </div>
+    <div id="studList">
+        <h2>Student List</h2>
+        <ul id="students"></ul>
+
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
