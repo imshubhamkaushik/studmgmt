@@ -32,16 +32,24 @@ app.use(
   }),
 );
 
-app.get("/api/v1/health", (req, res) => {
+// Root/server endpoint
+app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Student Management API is running.",
+    message: "Student Management API is running(/).",
   });
 });
 
-app.use("/api/v1/students", studentRoutes);
+// API health check
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Student Management API is running(/api/health).",
+  });
+});
 
-app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

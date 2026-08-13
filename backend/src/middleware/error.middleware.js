@@ -1,5 +1,11 @@
 export const errorHandler = (error, req, res, next) => {
-  console.error(error);
+  const statusCode = error.statusCode || 500;
+
+  // Log unexpected server-side failures.
+  // Expected 4xx responses do not need a stack trace.
+  if (statusCode >= 500) {
+    console.error(error);
+  }
 
   if (error.name === "CastError") {
     return res.status(400).json({
@@ -25,9 +31,7 @@ export const errorHandler = (error, req, res, next) => {
     });
   }
 
-  const statusCode = error.statusCode || 500;
-
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     success: false,
     message: statusCode >= 500 ? "Internal server error." : error.message,
   });
