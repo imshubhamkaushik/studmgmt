@@ -8,16 +8,19 @@ import { notFoundHandler } from "./middleware/not-found.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
+app.disable("x-powered-by");
 
-const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = new Set(
+  (process.env.CORS_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.has(origin)) {
         return callback(null, true);
       }
 
