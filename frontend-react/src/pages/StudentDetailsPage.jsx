@@ -6,11 +6,16 @@ import LoadingState from "../components/common/LoadingState";
 import ErrorState from "../components/common/ErrorState";
 
 import { formatDate, formatDateOnly } from "../utils/date";
+import { isValidObjectId } from "../utils/objectId";
 
 export default function StudentDetailsPage() {
   const { id } = useParams();
-
+  const validId = isValidObjectId(id);
   const { data, isLoading, isError, error, refetch } = useStudent(id);
+
+  if (!validId) {
+    return <ErrorState title="Invalid student ID" message="The requested student URL is invalid." />;
+  }
 
   if (isLoading) {
     return <LoadingState message="Loading student..." />;
@@ -85,6 +90,11 @@ export default function StudentDetailsPage() {
           <div className="detail-item">
             <dt>Class</dt>
             <dd>{student.class}</dd>
+          </div>
+
+          <div className="detail-item">
+            <dt>Section</dt>
+            <dd>{student.section}</dd>
           </div>
 
           <div className="detail-item">

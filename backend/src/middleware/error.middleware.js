@@ -7,6 +7,7 @@ export const errorHandler = (error, req, res, next) => {
     console.error(error);
   }
 
+  // Handle invalid MongoDB resource ID errors
   if (error.name === "CastError") {
     return res.status(400).json({
       success: false,
@@ -14,6 +15,7 @@ export const errorHandler = (error, req, res, next) => {
     });
   }
 
+  // Handle Mongoose validation errors
   if (error.name === "ValidationError") {
     const errors = Object.values(error.errors).map((item) => item.message);
 
@@ -24,11 +26,32 @@ export const errorHandler = (error, req, res, next) => {
     });
   }
 
+  // Handle duplicate key errors (MongoDB)
   if (error.code === 11000) {
-    return res.status(409).json({
-      success: false,
-      message: "A record with this value already exists.",
-    });
+    const keyPattern = error.keyPattern || {};
+    const keyValue = error.keyValue || {};
+
+    let message = "A record with this value already exists.";
+    
+    if (keyPattern.studentId) {
+      return res.status(409).json({
+        success: false,
+        message: "Student ID already exists.",
+      });
+    }
+    
+    if (keyPattern.class && keyPattern.section && keyPattern.rollNo) {
+      return res.status(409).json({ 
+        success: false,
+        message: `Roll number ${keyValue.rollNo} already exists for this class ${keyValue.class}, Section ${keyValue.section}.`
+      });
+    }
+    return res
+      .status(409)
+      .json({
+        success: false,
+        message: "A record with this value already exists.",
+      });
   }
 
   return res.status(statusCode).json({

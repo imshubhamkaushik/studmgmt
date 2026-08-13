@@ -26,6 +26,12 @@ export const studentSchema = z.object({
     .min(1, "Class is required.")
     .max(50, "Class cannot exceed 50 characters."),
 
+  section: z
+    .string()
+    .trim()
+    .min(1, "Section is required.")
+    .max(20, "Section cannot exceed 20 characters."),
+
   dob: z
     .string()
     .min(1, "Date of birth is required.")

@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate:student-ids": "node src/scripts/migrate-student-ids.js"
+    "migrate:student-ids": "node src/scripts/migrate-student-ids.js",
+    "test": "node --test"
   },
   "keywords": [
     "student-management",

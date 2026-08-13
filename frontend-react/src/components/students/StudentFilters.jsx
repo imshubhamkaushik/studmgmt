@@ -21,7 +21,8 @@ export default function StudentFilters({
           id="student-search"
           type="search"
           value={search}
-          placeholder="Search by name, class or Student ID..."
+          maxLength="100"
+          placeholder="Search by name, class, section or Student ID..."
           onChange={(event) => onSearchChange(event.target.value)}
         />
       </div>

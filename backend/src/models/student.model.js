@@ -31,6 +31,14 @@ const studentSchema = new mongoose.Schema(
       maxlength: [50, "Class cannot exceed 50 characters."],
     },
 
+    section: {
+      type: String,
+      required: [true, "Section is required."],
+      trim: true,
+      minlength: [1, "Section cannot be empty."],
+      maxlength: [20, "Section cannot exceed 20 characters."],
+    },
+
     dob: {
       type: Date,
       required: [true, "Date of birth is required."],
@@ -43,5 +51,6 @@ const studentSchema = new mongoose.Schema(
 );
 
 studentSchema.index({ studentId: 1 }, { unique: true });
+studentSchema.index({ class: 1, section: 1, rollNo: 1 }, { unique: true });
 
 export const Student = mongoose.model("Student", studentSchema);

@@ -7,6 +7,7 @@ const SORTABLE_FIELDS = new Set([
   "name",
   "rollNo",
   "class",
+  "section",
   "dob",
   "createdAt",
   "updatedAt",
@@ -44,7 +45,7 @@ export const createStudent = async (studentData) => {
 };
 
 export const getStudents = async (query) => {
-  const page = parsePositiveInteger(query.page, 1, "page");
+  const page = parsePositiveInteger(query.page, 1, "page", 100000);
 
   const limit = parsePositiveInteger(query.limit, 10, "limit", 100);
 
@@ -70,6 +71,10 @@ export const getStudents = async (query) => {
     throw new AppError("sortOrder must be either asc or desc.", 400);
   }
 
+  if (search.length > 100) {
+    throw new AppError("search cannot exceed 100 characters.", 400);
+  }
+
   const filter = {};
 
   if (search) {
@@ -89,6 +94,12 @@ export const getStudents = async (query) => {
         },
       },
       {
+        section: {
+          $regex: escapedSearch,
+          $options: "i",
+        },
+      },
+      {
         studentId: {
           $regex: escapedSearch,
           $options: "i",
@@ -98,7 +109,7 @@ export const getStudents = async (query) => {
   }
 
   const sortDirection = sortOrder === "asc" ? 1 : -1;
-  const sort = { [sortBy]: sortDirection, _id: 1 };
+  const sort = { [sortBy]: sortDirection, _id: sortDirection };
 
   const [students, totalItems] = await Promise.all([
     Student.find(filter)

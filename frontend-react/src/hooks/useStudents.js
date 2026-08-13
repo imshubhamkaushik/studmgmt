@@ -8,6 +8,7 @@ import {
   updateStudent,
 } from "../api/students";
 import { queryKeys } from "../api/queryKeys";
+import { isValidObjectId } from "../utils/objectId";
 
 const invalidateStudentData = async (queryClient) => {
   await Promise.all([
@@ -31,7 +32,7 @@ export const useStudent = (id) =>
   useQuery({
     queryKey: queryKeys.students.detail(id),
     queryFn: () => getStudentById(id),
-    enabled: Boolean(id),
+    enabled: isValidObjectId(id),
   });
 
 export const useCreateStudent = () => {

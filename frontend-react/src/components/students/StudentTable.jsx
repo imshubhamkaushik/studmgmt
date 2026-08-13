@@ -12,6 +12,7 @@ export default function StudentTable({ students = [], onDelete }) {
             <th>Name</th>
             <th>Roll No.</th>
             <th>Class</th>
+            <th>Section</th>
             <th>Date of Birth</th>
             <th>Created</th>
             <th aria-label="Actions" />
@@ -37,6 +38,8 @@ export default function StudentTable({ students = [], onDelete }) {
               <td>{student.rollNo}</td>
 
               <td>{student.class}</td>
+
+              <td>{student.section}</td>
 
               <td>{formatDateOnly(student.dob)}</td>
 

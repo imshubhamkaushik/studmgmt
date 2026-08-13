@@ -20,10 +20,14 @@ apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     const apiError = error.response?.data;
+    const message = apiError?.message
+      || (error.code === "ECONNABORTED" ? "Request timed out. Please try again." : null)
+      || (!error.response ? "Unable to reach the server. Please check your connection." : null)
+      || "Something went wrong. Please try again.";
 
     return Promise.reject(
       new ApiError(
-        apiError?.message || "Something went wrong. Please try again.",
+        message,
         {
           status: error.response?.status ?? 0,
           errors: apiError?.errors ?? null,

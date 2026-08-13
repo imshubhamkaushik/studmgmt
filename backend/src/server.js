@@ -5,12 +5,17 @@ dotenv.config();
 
 import app from "./app.js";
 import { connectDatabase } from "./config/db.js";
+import { loadEnv } from "./config/env.js";
 
-const PORT = Number(process.env.PORT || 5000);
+const { port: PORT } = loadEnv();
 
 let server;
 
+let shuttingDown = false;
+
 const shutdown = (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
   console.log(`${signal} received. Shutting down gracefully...`);
 
   server?.close(async () => {

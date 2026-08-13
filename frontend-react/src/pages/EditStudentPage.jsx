@@ -10,10 +10,12 @@ import InlineError from "../components/common/InlineError";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
 
 import { toDateInputValue } from "../utils/date";
+import { isValidObjectId } from "../utils/objectId";
 
 export default function EditStudentPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const validId = isValidObjectId(id);
 
   const { data, isLoading, isError, error, refetch } = useStudent(id);
 
@@ -28,10 +30,15 @@ export default function EditStudentPage() {
           ? String(student.rollNo)
           : "",
       class: student?.class ?? "",
+      section: student?.section ?? "",
       dob: toDateInputValue(student?.dob),
     }),
     [student],
   );
+
+  if (!validId) {
+    return <ErrorState title="Invalid student ID" message="The requested student URL is invalid." />;
+  }
 
   if (isLoading) {
     return <LoadingState message="Loading student..." />;

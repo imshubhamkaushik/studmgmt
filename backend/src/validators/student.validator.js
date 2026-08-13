@@ -32,8 +32,7 @@ const parseStudentDate = (value) => {
     return date;
   }
 
-  const date = new Date(trimmed);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return null;
 };
 
 const normalizeStudentPayload = (payload = {}) => {
@@ -56,6 +55,11 @@ const normalizeStudentPayload = (payload = {}) => {
       typeof payload.class === "string" ? payload.class.trim() : payload.class;
   }
 
+  if (payload.section !== undefined) {
+    normalized.section =
+      typeof payload.section === "string" ? payload.section.trim() : payload.section;
+  }
+
   if (payload.dob !== undefined) {
     normalized.dob = parseStudentDate(payload.dob);
   }
@@ -64,7 +68,7 @@ const normalizeStudentPayload = (payload = {}) => {
 };
 
 const validateStudentFields = (student, { partial = false } = {}) => {
-  const fields = ["name", "rollNo", "class", "dob"];
+  const fields = ["name", "rollNo", "class", "section", "dob"];
 
   if (!partial) {
     for (const field of fields) {
@@ -101,6 +105,12 @@ const validateStudentFields = (student, { partial = false } = {}) => {
       student.class.length > 50
     ) {
       throw new AppError("Class must be between 1 and 50 characters.", 400);
+    }
+  }
+
+  if (student.section !== undefined) {
+    if (typeof student.section !== "string" || student.section.length < 1 || student.section.length > 20) {
+      throw new AppError("Section must be between 1 and 20 characters.", 400);
     }
   }
 
@@ -147,7 +157,7 @@ export const validateUpdateStudent = (req, res, next) => {
   next();
 };
 
-const ALLOWED_STUDENT_FIELDS = new Set(["name", "rollNo", "class", "dob"]);
+const ALLOWED_STUDENT_FIELDS = new Set(["name", "rollNo", "class", "section", "dob"]);
 
 const validateAllowedFields = (payload) => {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
