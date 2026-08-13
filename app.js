@@ -1,77 +1,148 @@
-// Import necessary modules
 import express from "express";
 import mongoose from "mongoose";
-import pkg from "body-parser";
 
-// const express = require('express')
-// const mongoose = require('mongoose')
-// const bodyParser = require('body-parser')
-
-// Create an Express application
 const app = express();
+
+app.disable("x-powered-by");
+
 const PORT = process.env.PORT || 3000;
-// const { json } = pkg;
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/studDB";
 
-// Middleware to parse incoming JSON requests
-app.use(bodyParser.json());
-
-// Middleware to serve static files from the "public" directory
+// Middleware
+app.use(express.json());
 app.use(express.static("public"));
 
-// MongoDB connection
-mongoose.connect("mongodb://localhost:27017/studDB", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// Student Schema
+const studSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-// Define Student Schema using Mongoose
-const studSchema = new Schema({
-  name: String,
-  rollNo: Number,
-  sClass: String,
-  dob: Date,
-});
+    rollNo: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
 
-// Create a Mongoose model based on the schema
-const Student = model("Student", studSchema);
+    sClass: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-// Define routes
+    dob: {
+      type: Date,
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
 
-// GET endpoint to retrieve all students
+// Student Model
+const Student = mongoose.model("Student", studSchema);
+
+// GET /students
 app.get("/students", async (req, res) => {
   try {
-    // Retrieve all students from the database
-    const students = await Student.find();
+    const students = await Student.find().sort({ createdAt: -1 });
 
-    // Send a JSON response with the list of students
     res.status(200).json(students);
-  } catch (err) {
-    // If an error occurs, send a 400 Bad Request response with the error message
-    res.status(400).json({ message: err.message });
+  } catch (error) {
+    console.error("Error fetching students:", error);
+
+    res.status(500).json({
+      message: "Failed to fetch students",
+    });
   }
 });
 
-// DELETE endpoint to delete a student by ID
-app.delete("/students/:id", async (req, res) => {
-  const studId = req.params.id;
+// POST /students
+app.post("/students", async (req, res) => {
   try {
-    // Attempt to find and delete the student by ID
-    const deletedStudent = await Student.findByIdAndDelete(studId);
+    const { name, rollNo, sClass, dob } = req.body;
 
-    // If the student is not found, send a 404 Not Found response
-    if (!deletedStudent) {
-      return res.status(404).json({ message: "Student not found" });
+    if (!name || rollNo === undefined || !sClass || !dob) {
+      return res.status(400).json({
+        message: "Name, roll number, class and date of birth are required",
+      });
     }
 
-    // If deletion is successful, send a 204 No Content response
-    res.status(204).send();
-  } catch (err) {
-    // If an error occurs during deletion, send a 500 Internal Server Error response
-    res.status(500).json({ message: "Error in deleting the student" });
+    const parsedRollNo = Number(rollNo);
+
+    if (!Number.isInteger(parsedRollNo) || parsedRollNo <= 0) {
+      return res.status(400).json({
+        message: "Roll number must be a positive integer",
+      });
+    }
+
+    const student = new Student({
+      name,
+      rollNo: parsedRollNo,
+      sClass,
+      dob,
+    });
+
+    const savedStudent = await student.save();
+
+    res.status(201).json(savedStudent);
+  } catch (error) {
+    console.error("Error adding student:", error);
+
+    res.status(500).json({
+      message: "Failed to add student",
+    });
   }
 });
 
-// Start the server and listen on the specified port
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+// DELETE /students/:id
+app.delete("/students/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedStudent = await Student.findByIdAndDelete(id);
+
+    if (!deletedStudent) {
+      return res.status(404).json({
+        message: "Student not found",
+      });
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting student:", error);
+
+    res.status(500).json({
+      message: "Failed to delete student",
+    });
+  }
 });
+
+// Unknown route
+app.use((req, res) => {
+  res.status(404).json({
+    message: "Route not found",
+  });
+});
+
+// Connect to MongoDB before starting server
+try {
+  await mongoose.connect(MONGODB_URI);
+
+  console.log("Connected to MongoDB");
+
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+
+    console.log(`Open http://localhost:${PORT}`);
+  });
+} catch (error) {
+  console.error("Failed to connect to MongoDB:", error);
+
+  process.exit(1);
+}

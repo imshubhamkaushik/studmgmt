@@ -4,51 +4,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="Student Management System for managing student records.">
+
     <title>Student Management System</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- Bootstrap CSS - local copy -->
+    <link rel="stylesheet" href="bootstrap.min.css">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="bg-light">
-    <div class="container mt-5">
-        <h1 class="text-center text-primary mb-4">Student Management System</h1>
 
-        <div id="studForm" class="card p-3">
+    <main class="container mt-5">
+
+        <h1 class="text-center text-primary mb-4">
+            Student Management System
+        </h1>
+
+        <!-- Add Student -->
+        <section id="studForm" class="card p-3">
             <h2 class="mb-3">Add Student</h2>
-            <form>
+
+            <form id="studentForm">
+
                 <div class="form-group">
                     <label for="name">Name:</label>
-                    <input type="text" class="form-control" id="name" required>
+
+                    <input type="text" class="form-control" id="name" name="name" autocomplete="name" required>
                 </div>
+
                 <div class="form-group">
                     <label for="rollNo">Roll Number:</label>
-                    <input type="number" class="form-control" id="rollNo" required>
+
+                    <input type="number" class="form-control" id="rollNo" name="rollNo" min="1" required>
                 </div>
+
                 <div class="form-group">
                     <label for="class">Class:</label>
-                    <input type="text" class="form-control" id="class" required>
+
+                    <input type="text" class="form-control" id="class" name="class" required>
                 </div>
+
                 <div class="form-group">
                     <label for="dob">Date of Birth:</label>
-                    <input type="date" class="form-control" id="dob" required>
+
+                    <input type="date" class="form-control" id="dob" name="dob" required>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="addStud()">Add Student</button>
+
+                <button type="submit" class="btn btn-primary">
+                    Add Student
+                </button>
+
             </form>
-        </div>
+        </section>
 
-        <div id="studList" class="mt-4">
+        <!-- Student List -->
+        <section id="studList" class="mt-4">
+
             <h2 class="mb-3">Student List</h2>
-            <ul id="students" class="list-group"></ul>
-        </div>
-    </div>
 
-    <!-- Bootstrap JS and Popper.js (required for Bootstrap) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+            <ul id="students" class="list-group" aria-live="polite"></ul>
+
+        </section>
+
+    </main>
+
+    <!-- Application JavaScript -->
     <script src="script.js"></script>
+
 </body>
 
 </html>
