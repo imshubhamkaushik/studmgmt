@@ -1,17 +1,18 @@
 {
-  "name": "studmgmt",
+  "name": "student-management-system",
+  "private": true,
   "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
-  "type": "module",
   "scripts": {
-    "start": "node app.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "concurrently -n backend,frontend -c blue,green \"npm run backend\" \"npm run frontend\"",
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm run backend\" \"npm run frontend\"",
+    "backend": "npm --prefix backend run dev",
+    "frontend": "npm --prefix frontend-react run dev",
+    "build": "npm --prefix frontend-react run build",
+    "lint": "npm --prefix frontend-react run lint",
+    "backend:start": "npm --prefix backend start",
+    "migrate:student-ids": "npm --prefix backend run migrate:student-ids"
   },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^8.0.3"
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

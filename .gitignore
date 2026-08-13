@@ -1,19 +1,7 @@
-# Ignore node_modules, build, dist, coverage, and environment files
 node_modules/
-build/
 dist/
-coverage/
 .env
-.env.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-_env
-
-# IDE / Editors
-.idea/
-.vscode/
-*.iml
-*.project
-*.classpath
-*.settings/
+*.env
+!.env.example
+*.log
+coverage/
