@@ -30,8 +30,6 @@ export const errorHandler = (error, req, res, next) => {
   if (error.code === 11000) {
     const keyPattern = error.keyPattern || {};
     const keyValue = error.keyValue || {};
-
-    let message = "A record with this value already exists.";
     
     if (keyPattern.studentId) {
       return res.status(409).json({
