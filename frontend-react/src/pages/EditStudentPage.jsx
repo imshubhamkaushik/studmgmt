@@ -37,7 +37,12 @@ export default function EditStudentPage() {
   );
 
   if (!validId) {
-    return <ErrorState title="Invalid student ID" message="The requested student URL is invalid." />;
+    return (
+      <ErrorState
+        title="Invalid student ID"
+        message="The requested student URL is invalid."
+      />
+    );
   }
 
   if (isLoading) {

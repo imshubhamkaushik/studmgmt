@@ -32,11 +32,19 @@ export const useStudents = (params) =>
     placeholderData: (previousData) => previousData,
   });
 
-export const useStudentFilterOptions = () => useQuery({ queryKey: [...queryKeys.students.all, "filter-options"], queryFn: getStudentFilterOptions, staleTime: 60_000 });
+export const useStudentFilterOptions = () =>
+  useQuery({
+    queryKey: [...queryKeys.students.all, "filter-options"],
+    queryFn: getStudentFilterOptions,
+    staleTime: 60_000,
+  });
 
 export const useImportStudents = () => {
   const queryClient = useQueryClient();
-  return useMutation({ mutationFn: importStudents, onSuccess: () => invalidateStudentData(queryClient) });
+  return useMutation({
+    mutationFn: importStudents,
+    onSuccess: () => invalidateStudentData(queryClient),
+  });
 };
 
 export const useStudent = (id) =>
@@ -82,7 +90,10 @@ export const useDeleteStudent = () => {
 
 export const useRestoreStudent = () => {
   const queryClient = useQueryClient();
-  return useMutation({ mutationFn: restoreStudent, onSuccess: () => invalidateStudentData(queryClient) });
+  return useMutation({
+    mutationFn: restoreStudent,
+    onSuccess: () => invalidateStudentData(queryClient),
+  });
 };
 
 export const useBulkUpdateStudents = () => {

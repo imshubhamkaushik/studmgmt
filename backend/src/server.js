@@ -39,23 +39,19 @@ const shutdown = (signal) => {
   }, 10000).unref();
 };
 
-const startServer = async () => {
-  try {
-    await connectDatabase();
+try {
+  await connectDatabase();
 
-    await bootstrapAdmin();
+  await bootstrapAdmin();
 
-    server = app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to start the application:", error);
+  server = app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+  });
+} catch (error) {
+  console.error("Failed to start the application:", error);
 
-    process.exit(1);
-  }
-};
+  process.exit(1);
+}
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
-
-startServer();

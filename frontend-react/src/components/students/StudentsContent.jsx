@@ -22,6 +22,9 @@ export default function StudentsContent({
   onToggle,
   onToggleAll,
   showArchived,
+  sortBy,
+  sortOrder,
+  onSortChange,
 }) {
   if (isLoading) {
     return <LoadingState message="Loading students..." />;
@@ -50,7 +53,18 @@ export default function StudentsContent({
 
   return (
     <>
-      <StudentTable students={students} onDelete={onDelete} onRestore={onRestore} selectedIds={selectedIds} onToggle={onToggle} onToggleAll={onToggleAll} showArchived={showArchived} />
+      <StudentTable
+        students={students}
+        onDelete={onDelete}
+        onRestore={onRestore}
+        selectedIds={selectedIds}
+        onToggle={onToggle}
+        onToggleAll={onToggleAll}
+        showArchived={showArchived}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSortChange={onSortChange}
+      />
 
       <Pagination pagination={pagination} onPageChange={onPageChange} />
     </>

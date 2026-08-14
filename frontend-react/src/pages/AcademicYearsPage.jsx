@@ -1,2 +1,115 @@
-import { useEffect,useState } from "react"; import { createAcademicYear,getAcademicYears,activateAcademicYear } from "../api/academicYears";
-export default function AcademicYearsPage(){const [items,setItems]=useState([]),[error,setError]=useState(""),[form,setForm]=useState({name:"",startDate:"",endDate:"",isActive:false}); const load=()=>getAcademicYears().then(r=>setItems(r.data)).catch(e=>setError(e.message)); useEffect(()=>{load()},[]); const submit=async e=>{e.preventDefault();setError("");try{await createAcademicYear(form);setForm({name:"",startDate:"",endDate:"",isActive:false});load()}catch(err){setError(err.message)}}; return <main className="page"><div className="page-heading"><div><p className="eyebrow">Academic structure</p><h1>Academic Years</h1><p>Create and manage academic periods.</p></div></div>{error&&<p className="form-error">{error}</p>}<section className="card"><form className="student-form" onSubmit={submit}><input placeholder="2026-2027" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/><input type="date" value={form.startDate} onChange={e=>setForm({...form,startDate:e.target.value})}/><input type="date" value={form.endDate} onChange={e=>setForm({...form,endDate:e.target.value})}/><label><input type="checkbox" checked={form.isActive} onChange={e=>setForm({...form,isActive:e.target.checked})}/> Active year</label><button className="button primary">Create Academic Year</button></form></section><section className="card"><div className="table-wrapper"><table><thead><tr><th>Name</th><th>Start</th><th>End</th><th>Status</th><th></th></tr></thead><tbody>{items.map(x=><tr key={x._id}><td>{x.name}</td><td>{new Date(x.startDate).toLocaleDateString()}</td><td>{new Date(x.endDate).toLocaleDateString()}</td><td>{x.isActive?"Active":"Inactive"}</td><td>{!x.isActive&&<button className="button secondary" onClick={async()=>{await activateAcademicYear(x._id);load()}}>Set active</button>}</td></tr>)}</tbody></table></div></section></main>}
+import { useEffect, useState } from "react";
+import {
+  createAcademicYear,
+  getAcademicYears,
+  activateAcademicYear,
+} from "../api/academicYears";
+export default function AcademicYearsPage() {
+  const [items, setItems] = useState([]),
+    [error, setError] = useState(""),
+    [form, setForm] = useState({
+      name: "",
+      startDate: "",
+      endDate: "",
+      isActive: false,
+    });
+  const load = () =>
+    getAcademicYears()
+      .then((r) => setItems(r.data))
+      .catch((e) => setError(e.message));
+  useEffect(() => {
+    load();
+  }, []);
+  const submit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await createAcademicYear(form);
+      setForm({ name: "", startDate: "", endDate: "", isActive: false });
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+  return (
+    <main className="page">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Academic structure</p>
+          <h1>Academic Years</h1>
+          <p>Create and manage academic periods.</p>
+        </div>
+      </div>
+      {error && <p className="form-error">{error}</p>}
+      <section className="card">
+        <form className="student-form" onSubmit={submit}>
+          <input
+            placeholder="2026-2027"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+          <input
+            type="date"
+            value={form.startDate}
+            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+          />
+          <input
+            type="date"
+            value={form.endDate}
+            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+          />
+          <label>
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+            />{" "}
+            Active year
+          </label>
+          <button type="submit" className="button primary">
+            Create Academic Year
+          </button>
+        </form>
+      </section>
+      <section className="card">
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((x) => (
+                <tr key={x._id}>
+                  <td>{x.name}</td>
+                  <td>{new Date(x.startDate).toLocaleDateString()}</td>
+                  <td>{new Date(x.endDate).toLocaleDateString()}</td>
+                  <td>{x.isActive ? "Active" : "Inactive"}</td>
+                  <td>
+                    {!x.isActive && (
+                      <button
+                        type="button"
+                        className="button secondary"
+                        onClick={async () => {
+                          await activateAcademicYear(x._id);
+                          load();
+                        }}
+                      >
+                        Set active
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  );
+}

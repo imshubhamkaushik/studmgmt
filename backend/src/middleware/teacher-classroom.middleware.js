@@ -1,2 +1,40 @@
-import { AppError } from "../utils/AppError.js";import { TeacherClassroomAssignment } from "../models/teacher-classroom-assignment.model.js";import { Classroom } from "../models/classroom.model.js";
-export async function enforceTeacherClassroom(req,res,next){try{if(req.user?.role!=="teacher")return next();const className=req.body?.class||req.body?.className||req.query?.class;const section=req.body?.section||req.query?.section;if(!className||!section)return next(new AppError("Teachers must specify class and section.",400));const rooms=await Classroom.find({className,section,isActive:true}).select("_id").lean();const ids=rooms.map(r=>r._id);const ok=ids.length&&await TeacherClassroomAssignment.exists({teacher:req.user.sub,classroom:{$in:ids},isActive:true});if(!ok)return next(new AppError("You are not assigned to this classroom.",403));next();}catch(e){next(e);}}
+import { AppError } from "../utils/AppError.js";
+import { TeacherClassroomAssignment } from "../models/teacher-classroom-assignment.model.js";
+import { Classroom } from "../models/classroom.model.js";
+
+export async function enforceTeacherClassroom(req, res, next) {
+  try {
+    if (req.user?.role !== "teacher") return next();
+    
+    const className =
+      req.body?.class || req.body?.className || req.query?.class;
+    
+    const section = req.body?.section || req.query?.section;
+    
+    if (!className || !section)
+      return next(
+        new AppError("Teachers must specify class and section.", 400),
+      );
+    
+    const rooms = await Classroom.find({ className, section, isActive: true })
+      .select("_id")
+      .lean();
+    
+    const ids = rooms.map((r) => r._id);
+    
+    const ok =
+      ids.length &&
+      (await TeacherClassroomAssignment.exists({
+        teacher: req.user.sub,
+        classroom: { $in: ids },
+        isActive: true,
+      }));
+    
+    if (!ok)
+      return next(new AppError("You are not assigned to this classroom.", 403));
+    
+    next();
+  } catch (e) {
+    next(e);
+  }
+}

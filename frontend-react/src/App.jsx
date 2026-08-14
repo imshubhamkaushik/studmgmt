@@ -22,8 +22,13 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -32,13 +37,55 @@ export default function App() {
 
         <Route path="/attendance" element={<AttendancePage />} />
 
-        <Route path="/academic-years" element={<ProtectedRoute roles={["admin"]}><AcademicYearsPage /></ProtectedRoute>} />
+        <Route
+          path="/academic-years"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <AcademicYearsPage />
+            </ProtectedRoute>
+          }
+        />
 
-        <Route path="/classrooms" element={<ProtectedRoute roles={["admin"]}><ClassroomsPage /></ProtectedRoute>} />
-        <Route path="/enrollments" element={<ProtectedRoute roles={["admin","staff"]}><EnrollmentsPage /></ProtectedRoute>} />
-        <Route path="/promotions" element={<ProtectedRoute roles={["admin"]}><PromotionPage /></ProtectedRoute>} />
-        <Route path="/users" element={<ProtectedRoute roles={["admin"]}><UsersPage /></ProtectedRoute>} />
-          <Route path="/teacher-assignments" element={<ProtectedRoute roles={["admin"]}><TeacherAssignmentsPage /></ProtectedRoute>} />
+        <Route
+          path="/classrooms"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <ClassroomsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/enrollments"
+          element={
+            <ProtectedRoute roles={["admin", "staff"]}>
+              <EnrollmentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/promotions"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <PromotionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher-assignments"
+          element={
+            <ProtectedRoute roles={["admin"]}>
+              <TeacherAssignmentsPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="/students/new" element={<AddStudentPage />} />
 

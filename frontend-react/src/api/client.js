@@ -59,29 +59,31 @@ apiClient.interceptors.response.use(
   async (error) => {
     const original = error.config || {};
     const url = String(original.url || "");
-    
+
     const isAuthEndpoint =
       url.includes("/auth/login") || url.includes("/auth/refresh");
-    
+
     if (error.response?.status === 401 && !original._retry && !isAuthEndpoint) {
       original._retry = true;
       try {
         const token = await refreshAccessToken();
+        
         if (!token) throw new Error("No refreshed token returned");
+        
         setToken(token);
-        original.headers = {
-          ...(original.headers || {}),
-          Authorization: `Bearer ${token}`,
-        };
+        
+        original.headers ??= {};
+        original.headers.Authorization = `Bearer ${token}`;
+        
         return apiClient(original);
       } catch {
         localStorage.removeItem("studenthub.auth");
         window.dispatchEvent(new Event("auth:expired"));
       }
     }
-    
+
     const apiError = error.response?.data;
-    
+
     const message =
       apiError?.message ||
       (error.code === "ECONNABORTED"
@@ -91,12 +93,10 @@ apiClient.interceptors.response.use(
         ? "Unable to reach the server. Please check your connection."
         : null) ||
       "Something went wrong. Please try again.";
-    return Promise.reject(
-      new ApiError(message, {
-        status: error.response?.status ?? 0,
-        errors: apiError?.errors ?? null,
-      }),
-    );
+    throw new ApiError(message, {
+      status: error.response?.status ?? 0,
+      errors: apiError?.errors ?? null,
+    });
   },
 );
 

@@ -8,72 +8,65 @@ export default function Modal({
   busy = false,
 }) {
   const titleId = useId();
+  const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
 
   useEffect(() => {
-    if (!isOpen) {
-      return undefined;
+    const dialog = dialogRef.current;
+
+    if (!dialog) {
+      return;
     }
 
-    if (!busy) {
+    if (isOpen && !dialog.open) {
+      dialog.showModal();
+    }
+
+    if (!isOpen && dialog.open) {
+      dialog.close();
+    }
+
+    if (isOpen && !busy) {
       closeButtonRef.current?.focus();
     }
+  }, [isOpen, busy]);
 
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape" && !busy) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, busy, onClose]);
-
-  if (!isOpen) {
-    return null;
-  }
-
-  const handleBackdropMouseDown = () => {
+  const handleClose = () => {
     if (!busy) {
       onClose();
     }
   };
 
+  const handleCancel = (event) => {
+    if (busy) {
+      event.preventDefault();
+    }
+  };
+
   return (
-    <div className="modal-backdrop" onMouseDown={handleBackdropMouseDown}>
-      <div
-        className="modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        onMouseDown={(event) => {
-          event.stopPropagation();
-        }}
-      >
-        <div className="modal-header">
-          <h2 id={titleId}>{title}</h2>
+    <dialog
+      ref={dialogRef}
+      className="modal"
+      aria-labelledby={titleId}
+      onClose={handleClose}
+      onCancel={handleCancel}
+    >
+      <div className="modal-header">
+        <h2 id={titleId}>{title}</h2>
 
-          <button
-            ref={closeButtonRef}
-            type="button"
-            className="modal-close"
-            onClick={() => {
-              if (!busy) {
-                onClose();
-              }
-            }}
-            disabled={busy}
-            aria-label="Close dialog"
-          >
-            ×
-          </button>
-        </div>
-
-        {children}
+        <button
+          ref={closeButtonRef}
+          type="button"
+          className="modal-close"
+          onClick={onClose}
+          disabled={busy}
+          aria-label="Close dialog"
+        >
+          ×
+        </button>
       </div>
-    </div>
+
+      {children}
+    </dialog>
   );
 }

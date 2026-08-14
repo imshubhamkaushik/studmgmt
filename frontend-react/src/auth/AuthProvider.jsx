@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import * as authApi from "../api/auth.js";
 
 const AuthContext = createContext(null);
@@ -25,7 +33,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const initialized = useRef(false);
 
-  const clear = () => {
+  const clear = useCallback(() => {
     const next = {
       user: null,
       token: null,
@@ -33,7 +41,7 @@ export function AuthProvider({ children }) {
 
     setState(next);
     localStorage.removeItem(KEY);
-  };
+  }, []);
 
   useEffect(() => {
     const onExpired = () => clear();
@@ -43,11 +51,12 @@ export function AuthProvider({ children }) {
     return () => {
       window.removeEventListener("auth:expired", onExpired);
     };
-  }, []);
+  }, [clear]);
 
   useEffect(() => {
-    // Prevent duplicate initialization in React Strict Mode.
-    if (initialized.current) return;
+    if (initialized.current) {
+      return;
+    }
 
     initialized.current = true;
 
@@ -55,8 +64,6 @@ export function AuthProvider({ children }) {
       try {
         const storedAuth = JSON.parse(localStorage.getItem(KEY) || "null");
 
-        // No access token means there is no existing browser session
-        // we can restore without first performing a login.
         if (!storedAuth?.token) {
           clear();
           return;
@@ -79,9 +86,9 @@ export function AuthProvider({ children }) {
     };
 
     initializeAuth();
-  }, []);
+  }, [clear]);
 
-  async function login(credentials) {
+  const login = useCallback(async (credentials) => {
     const response = await authApi.login(credentials);
 
     const next = {
@@ -93,9 +100,9 @@ export function AuthProvider({ children }) {
     localStorage.setItem(KEY, JSON.stringify(next));
 
     return response.data;
-  }
+  }, []);
 
-  async function logout() {
+  const logout = useCallback(async () => {
     try {
       await authApi.logout();
     } catch {
@@ -104,16 +111,19 @@ export function AuthProvider({ children }) {
     }
 
     clear();
-  }
+  }, [clear]);
 
-  const value = {
-    ...state,
-    loading,
-    login,
-    logout,
-    isAuthenticated: Boolean(state.token),
-    hasRole: (...roles) => roles.includes(state.user?.role),
-  };
+  const value = useMemo(
+    () => ({
+      ...state,
+      loading,
+      login,
+      logout,
+      isAuthenticated: Boolean(state.token),
+      hasRole: (...roles) => roles.includes(state.user?.role),
+    }),
+    [state, loading, login, logout],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

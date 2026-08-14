@@ -17,10 +17,26 @@ const navigationItems = [
     label: "Attendance",
     icon: "✓",
   },
-  { to: "/academic-years", label: "Academic Years", icon: "◷", roles: ["admin"] },
+  {
+    to: "/academic-years",
+    label: "Academic Years",
+    icon: "◷",
+    roles: ["admin"],
+  },
   { to: "/classrooms", label: "Classrooms", icon: "▤", roles: ["admin"] },
-  { to: "/enrollments", label: "Enrollments", icon: "↔", roles: ["admin","staff"] },
+  {
+    to: "/enrollments",
+    label: "Enrollments",
+    icon: "↔",
+    roles: ["admin", "staff"],
+  },
   { to: "/promotions", label: "Promotions", icon: "⇧", roles: ["admin"] },
+  {
+    to: "/teacher-assignments",
+    label: "Teacher Assignments",
+    icon: "⇄",
+    roles: ["admin"],
+  },
   { to: "/users", label: "Users & Roles", icon: "♙", roles: ["admin"] },
 ];
 
@@ -38,21 +54,23 @@ export default function Sidebar() {
       </NavLink>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
-        {navigationItems.filter((item) => !item.roles || item.roles.includes(user?.role)).map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              `sidebar-link ${isActive ? "active" : ""}`
-            }
-          >
-            <span className="sidebar-link-icon" aria-hidden="true">
-              {item.icon}
-            </span>
+        {navigationItems
+          .filter((item) => !item.roles || item.roles.includes(user?.role))
+          .map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `sidebar-link ${isActive ? "active" : ""}`
+              }
+            >
+              <span className="sidebar-link-icon" aria-hidden="true">
+                {item.icon}
+              </span>
 
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
       </nav>
 
       <div className="sidebar-footer">

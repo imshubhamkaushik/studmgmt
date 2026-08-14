@@ -20,8 +20,8 @@ export const restoreStudent = (id) => apiClient.post(`/students/${id}/restore`);
 export const bulkUpdateStudents = (payload) =>
   apiClient.patch("/students/bulk", payload);
 
-export const getStudentFilterOptions = () =>
-  apiClient.get("/students/filter-options");
+export const getStudentFilterOptions = (params = {}) =>
+  apiClient.get("/students/filter-options", { params });
 
 export const importStudents = (students) =>
   apiClient.post("/students/import", { students });

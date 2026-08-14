@@ -31,11 +31,26 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page">
-      <div className="dashboard-range" role="group" aria-label="Dashboard date range">
-        {[["all", "All Time"], ["7d", "Last 7 Days"], ["30d", "Last 30 Days"]].map(([value, label]) => (
-          <button key={value} type="button" className={`button ${range === value ? "button-primary" : "button-secondary"}`} onClick={() => setRange(value)}>{label}</button>
+      <fieldset className="dashboard-range">
+        <legend className="sr-only">Dashboard date range</legend>
+
+        {[
+          ["all", "All Time"],
+          ["7d", "Last 7 Days"],
+          ["30d", "Last 30 Days"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`button ${
+              range === value ? "button-primary" : "button-secondary"
+            }`}
+            onClick={() => setRange(value)}
+          >
+            {label}
+          </button>
         ))}
-      </div>
+      </fieldset>
       <section className="stats-grid">
         <article className="stat-card">
           <span className="stat-card-label">Total Students</span>
@@ -51,14 +66,23 @@ export default function DashboardPage() {
 
         <article className="stat-card">
           <span className="stat-card-label">Active Students</span>
-          <strong className="stat-card-value">{stats?.activeStudents ?? 0}</strong>
-          <span className="stat-card-description">Currently active student records</span>
+          <strong className="stat-card-value">
+            {stats?.activeStudents ?? 0}
+          </strong>
+          <span className="stat-card-description">
+            Currently active student records
+          </span>
         </article>
 
         <article className="stat-card">
           <span className="stat-card-label">Today&apos;s Attendance</span>
-          <strong className="stat-card-value">{stats?.todayAttendance?.percentage ?? 0}%</strong>
-          <span className="stat-card-description">{stats?.todayAttendance?.present ?? 0} present · {stats?.todayAttendance?.absent ?? 0} absent</span>
+          <strong className="stat-card-value">
+            {stats?.todayAttendance?.percentage ?? 0}%
+          </strong>
+          <span className="stat-card-description">
+            {stats?.todayAttendance?.present ?? 0} present ·{" "}
+            {stats?.todayAttendance?.absent ?? 0} absent
+          </span>
         </article>
 
         <article className="stat-card">
@@ -130,7 +154,8 @@ export default function DashboardPage() {
                     <strong>{student.name}</strong>
 
                     <span>
-                      {student.studentId} · Class {student.class}-{student.section} · {student.status ?? "active"}
+                      {student.studentId} · Class {student.class}-
+                      {student.section} · {student.status ?? "active"}
                     </span>
                   </div>
 
@@ -148,13 +173,37 @@ export default function DashboardPage() {
       </section>
 
       <section className="dashboard-card recently-updated-card">
-        <div className="section-heading"><div><h2>Recently Updated</h2><p>Latest changes to student records.</p></div></div>
-        {stats?.recentlyUpdated?.length > 0 ? <div className="recent-students-list">
-          {stats.recentlyUpdated.map((student) => <Link key={student._id} to={`/students/${student._id}`} className="recent-student-item">
-            <div><strong>{student.name}</strong><span>{student.studentId} · Class {student.class}-{student.section} · {student.status ?? "active"}</span></div>
-            <time>{formatDate(student.updatedAt)}</time>
-          </Link>)}
-        </div> : <EmptyState title="No recent updates" message="Updates will appear here when student records change." />}
+        <div className="section-heading">
+          <div>
+            <h2>Recently Updated</h2>
+            <p>Latest changes to student records.</p>
+          </div>
+        </div>
+        {stats?.recentlyUpdated?.length > 0 ? (
+          <div className="recent-students-list">
+            {stats.recentlyUpdated.map((student) => (
+              <Link
+                key={student._id}
+                to={`/students/${student._id}`}
+                className="recent-student-item"
+              >
+                <div>
+                  <strong>{student.name}</strong>
+                  <span>
+                    {student.studentId} · Class {student.class}-
+                    {student.section} · {student.status ?? "active"}
+                  </span>
+                </div>
+                <time>{formatDate(student.updatedAt)}</time>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No recent updates"
+            message="Updates will appear here when student records change."
+          />
+        )}
       </section>
     </div>
   );
