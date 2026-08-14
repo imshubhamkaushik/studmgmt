@@ -67,3 +67,45 @@ npm --prefix backend run migrate:student-ids -- --dry-run
 ```
 
 Student IDs are unique and monotonic, but are not guaranteed to be gapless.
+
+## Latest feature upgrade
+
+The student module now supports a complete student lifecycle and richer data operations:
+
+- Student statuses: `active`, `inactive`, `graduated`, `transferred`, `suspended`
+- Advanced filtering by class, section and status
+- CSV export for the current filtered student set
+- CSV import (up to 500 students per request) with server-side validation and duplicate detection
+- Dashboard active-student and status analytics
+- Unique `class + section + rollNo` data integrity rule
+
+### New API endpoints
+
+- `GET /api/v1/students/filter-options`
+- `GET /api/v1/students/export`
+- `POST /api/v1/students/import`
+
+CSV import accepts JSON from the frontend after local CSV parsing:
+
+```json
+{
+  "students": [
+    {
+      "name": "Alice Smith",
+      "class": "10",
+      "section": "A",
+      "rollNo": 1,
+      "status": "active",
+      "dob": "2008-02-29"
+    }
+  ]
+}
+```
+
+For existing databases, migrate legacy records before relying on status filters:
+
+```bash
+cd backend
+npm run migrate:student-statuses -- --dry-run
+npm run migrate:student-statuses
+```

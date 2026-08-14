@@ -39,6 +39,9 @@ export function getStudentFilters(searchParams) {
     search: searchParams.get("search") ?? "",
     sortBy,
     sortOrder,
+    className: searchParams.get("class") ?? "",
+    section: searchParams.get("section") ?? "",
+    status: searchParams.get("status") ?? "",
   };
 }
 

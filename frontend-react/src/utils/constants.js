@@ -27,4 +27,8 @@ export const STUDENT_SORT_OPTIONS = [
     value: "section",
     label: "Section",
   },
+  {
+    value: "status",
+    label: "Status",
+  },
 ];

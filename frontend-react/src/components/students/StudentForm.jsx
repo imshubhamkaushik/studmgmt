@@ -11,6 +11,7 @@ const DEFAULT_VALUES = {
   rollNo: "",
   class: "",
   section: "",
+  status: "active",
   dob: "",
 };
 
@@ -114,6 +115,18 @@ export default function StudentForm({
           <label htmlFor="section">Section</label>
           <input id="section" type="text" placeholder="For example: A" aria-invalid={Boolean(errors.section)} aria-describedby={errors.section ? "section-error" : undefined} aria-required="true" {...register("section")} />
           {errors.section && (<p id="section-error" className="field-error" role="alert">{errors.section.message}</p>)}
+        </div>
+
+        <div className="form-field">
+          <label htmlFor="status">Status</label>
+          <select id="status" aria-required="true" {...register("status")}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="graduated">Graduated</option>
+            <option value="transferred">Transferred</option>
+            <option value="suspended">Suspended</option>
+          </select>
+          {errors.status && (<p className="field-error" role="alert">{errors.status.message}</p>)}
         </div>
 
         <div className="form-field">

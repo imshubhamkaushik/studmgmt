@@ -13,6 +13,7 @@ export default function StudentTable({ students = [], onDelete }) {
             <th>Roll No.</th>
             <th>Class</th>
             <th>Section</th>
+            <th>Status</th>
             <th>Date of Birth</th>
             <th>Created</th>
             <th aria-label="Actions" />
@@ -40,6 +41,8 @@ export default function StudentTable({ students = [], onDelete }) {
               <td>{student.class}</td>
 
               <td>{student.section}</td>
+
+              <td><span className={`status-badge status-${student.status ?? "active"}`}>{student.status ?? "active"}</span></td>
 
               <td>{formatDateOnly(student.dob)}</td>
 

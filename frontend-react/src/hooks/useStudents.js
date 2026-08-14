@@ -6,6 +6,8 @@ import {
   getStudentById,
   getStudents,
   updateStudent,
+  getStudentFilterOptions,
+  importStudents,
 } from "../api/students";
 import { queryKeys } from "../api/queryKeys";
 import { isValidObjectId } from "../utils/objectId";
@@ -27,6 +29,13 @@ export const useStudents = (params) =>
     queryFn: () => getStudents(params),
     placeholderData: (previousData) => previousData,
   });
+
+export const useStudentFilterOptions = () => useQuery({ queryKey: [...queryKeys.students.all, "filter-options"], queryFn: getStudentFilterOptions, staleTime: 60_000 });
+
+export const useImportStudents = () => {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: importStudents, onSuccess: () => invalidateStudentData(queryClient) });
+};
 
 export const useStudent = (id) =>
   useQuery({

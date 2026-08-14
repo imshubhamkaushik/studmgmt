@@ -5,7 +5,11 @@ import { validateCreateStudent } from "../src/validators/student.validator.js";
 const run = (body) => {
   const req = { body };
   let nextError;
-  validateCreateStudent(req, {}, (error) => { nextError = error; });
+  try {
+    validateCreateStudent(req, {}, (error) => { nextError = error; });
+  } catch (error) {
+    nextError = error;
+  }
   return { req, nextError };
 };
 

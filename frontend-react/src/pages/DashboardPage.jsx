@@ -43,6 +43,12 @@ export default function DashboardPage() {
         </article>
 
         <article className="stat-card">
+          <span className="stat-card-label">Active Students</span>
+          <strong className="stat-card-value">{stats?.activeStudents ?? 0}</strong>
+          <span className="stat-card-description">Currently active student records</span>
+        </article>
+
+        <article className="stat-card">
           <span className="stat-card-label">Classes</span>
 
           <strong className="stat-card-value">
@@ -111,7 +117,7 @@ export default function DashboardPage() {
                     <strong>{student.name}</strong>
 
                     <span>
-                      {student.studentId} · Class {student.class}
+                      {student.studentId} · Class {student.class}-{student.section} · {student.status ?? "active"}
                     </span>
                   </div>
 

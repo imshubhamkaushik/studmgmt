@@ -894,3 +894,5 @@
   color: #70747d;
   font-size: 14px;
 }
+
+.toolbar-actions,.import-export-actions{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}.import-success{color:#15803d;font-size:.9rem}.status-badge{display:inline-flex;padding:.2rem .55rem;border-radius:999px;font-size:.8rem;text-transform:capitalize;background:#e5e7eb}.status-active{background:#dcfce7}.status-inactive,.status-suspended{background:#fee2e2}.status-graduated{background:#dbeafe}.status-transferred{background:#fef3c7}

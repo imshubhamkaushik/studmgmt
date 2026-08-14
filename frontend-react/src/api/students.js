@@ -1,16 +1,10 @@
 import apiClient from "./client";
 
-export const getStudents = (params) =>
-  apiClient.get("/students", {
-    params,
-  });
-
+export const getStudents = (params) => apiClient.get("/students", { params });
 export const getStudentById = (id) => apiClient.get(`/students/${id}`);
-
-export const createStudent = (studentData) =>
-  apiClient.post("/students", studentData);
-
-export const updateStudent = (id, studentData) =>
-  apiClient.patch(`/students/${id}`, studentData);
-
+export const createStudent = (studentData) => apiClient.post("/students", studentData);
+export const updateStudent = (id, studentData) => apiClient.patch(`/students/${id}`, studentData);
 export const deleteStudent = (id) => apiClient.delete(`/students/${id}`);
+export const getStudentFilterOptions = () => apiClient.get("/students/filter-options");
+export const importStudents = (students) => apiClient.post("/students/import", { students });
+export const exportStudents = (params) => apiClient.get("/students/export", { params, responseType: "blob" });

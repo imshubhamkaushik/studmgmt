@@ -1,4 +1,5 @@
 import { AppError } from "../utils/AppError.js";
+import { STUDENT_STATUSES } from "../utils/student-statuses.js";
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
@@ -60,9 +61,15 @@ const normalizeStudentPayload = (payload = {}) => {
       typeof payload.section === "string" ? payload.section.trim() : payload.section;
   }
 
+  if (payload.status !== undefined) {
+    normalized.status = typeof payload.status === "string" ? payload.status.trim().toLowerCase() : payload.status;
+  }
+
   if (payload.dob !== undefined) {
     normalized.dob = parseStudentDate(payload.dob);
   }
+
+  if (payload.expectedUpdatedAt !== undefined) normalized.expectedUpdatedAt = payload.expectedUpdatedAt;
 
   return normalized;
 };
@@ -114,6 +121,10 @@ const validateStudentFields = (student, { partial = false } = {}) => {
     }
   }
 
+  if (student.status !== undefined && !STUDENT_STATUSES.includes(student.status)) {
+    throw new AppError(`Status must be one of: ${STUDENT_STATUSES.join(", ")}.`, 400);
+  }
+
   if (student.dob !== undefined) {
     if (!(student.dob instanceof Date) || Number.isNaN(student.dob.getTime())) {
       throw new AppError("Date of birth must be a valid date.", 400);
@@ -125,12 +136,18 @@ const validateStudentFields = (student, { partial = false } = {}) => {
   }
 };
 
+export const normalizeAndValidateStudentPayload = (payload, { partial = false } = {}) => {
+  validateAllowedFields(payload);
+  const student = normalizeStudentPayload(payload);
+  validateStudentFields(student, { partial });
+  if (partial && Object.keys(student).length === 0) {
+    throw new AppError("At least one field is required for update.", 400);
+  }
+  return student;
+};
+
 export const validateCreateStudent = (req, res, next) => {
-  validateAllowedFields(req.body);
-
-  const student = normalizeStudentPayload(req.body);
-
-  validateStudentFields(student);
+  const student = normalizeAndValidateStudentPayload(req.body);
 
   req.body = student;
 
@@ -138,26 +155,14 @@ export const validateCreateStudent = (req, res, next) => {
 };
 
 export const validateUpdateStudent = (req, res, next) => {
-  validateAllowedFields(req.body);
-
-  const student = normalizeStudentPayload(req.body);
-
-  if (Object.keys(student).length === 0) {
-    return next(
-      new AppError("At least one field is required for update.", 400),
-    );
-  }
-
-  validateStudentFields(student, {
-    partial: true,
-  });
+  const student = normalizeAndValidateStudentPayload(req.body, { partial: true });
 
   req.body = student;
 
   next();
 };
 
-const ALLOWED_STUDENT_FIELDS = new Set(["name", "rollNo", "class", "section", "dob"]);
+const ALLOWED_STUDENT_FIELDS = new Set(["name", "rollNo", "class", "section", "status", "dob", "expectedUpdatedAt"]);
 
 const validateAllowedFields = (payload) => {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {

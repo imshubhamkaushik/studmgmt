@@ -32,6 +32,8 @@ export const studentSchema = z.object({
     .min(1, "Section is required.")
     .max(20, "Section cannot exceed 20 characters."),
 
+  status: z.enum(["active", "inactive", "graduated", "transferred", "suspended"]).default("active"),
+
   dob: z
     .string()
     .min(1, "Date of birth is required.")

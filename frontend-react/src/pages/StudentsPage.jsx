@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { useDeleteStudent, useStudents } from "../hooks/useStudents";
+import { useDeleteStudent, useStudentFilterOptions, useStudents } from "../hooks/useStudents";
 
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 
@@ -14,6 +14,7 @@ import { getStudentFilters } from "../utils/studentFilters";
 import StudentFilters from "../components/students/StudentFilters";
 import StudentsContent from "../components/students/StudentsContent";
 import DeleteStudentModal from "../components/students/DeleteStudentModal";
+import StudentImportExport from "../components/students/StudentImportExport";
 
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
 
@@ -26,7 +27,7 @@ export default function StudentsPage() {
 
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  const { setPage, setLimit, setSortBy, setSortOrder } =
+  const { setPage, setLimit, setSortBy, setSortOrder, setClass, setSection, setStatus, clearFilters } =
     useStudentFilters(setSearchParams);
 
   useSyncSearchWithUrl({
@@ -36,12 +37,17 @@ export default function StudentsPage() {
     setSearchParams,
   });
 
+  const { data: filterOptionsData } = useStudentFilterOptions();
+
   const { data, isLoading, isError, error, refetch } = useStudents({
     page: filters.page,
     limit: filters.limit,
     search: filters.search,
     sortBy: filters.sortBy,
     sortOrder: filters.sortOrder,
+    class: filters.className || undefined,
+    section: filters.section || undefined,
+    status: filters.status || undefined,
   });
 
   const deleteMutation = useDeleteStudent();
@@ -90,13 +96,22 @@ export default function StudentsPage() {
           onSortByChange={setSortBy}
           sortOrder={filters.sortOrder}
           onSortOrderChange={setSortOrder}
+          className={filters.className}
+          onClassChange={setClass}
+          section={filters.section}
+          onSectionChange={setSection}
+          status={filters.status}
+          onStatusChange={setStatus}
+          options={filterOptionsData?.data}
+          onClearFilters={clearFilters}
           limit={filters.limit}
           onLimitChange={setLimit}
         />
 
-        <Link to="/students/new" className="button button-primary">
-          + Add Student
-        </Link>
+        <div className="toolbar-actions">
+          <StudentImportExport filters={filters} />
+          <Link to="/students/new" className="button button-primary">+ Add Student</Link>
+        </div>
       </div>
 
       <StudentsContent
