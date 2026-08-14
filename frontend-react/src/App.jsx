@@ -8,6 +8,9 @@ import StudentDetailsPage from "./pages/StudentDetailsPage";
 import AddStudentPage from "./pages/AddStudentPage";
 import EditStudentPage from "./pages/EditStudentPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import AttendancePage from "./pages/AttendancePage";
+import AcademicYearsPage from "./pages/AcademicYearsPage";
+import ClassroomsPage from "./pages/ClassroomsPage";
 
 export default function App() {
   return (
@@ -18,6 +21,12 @@ export default function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
 
         <Route path="/students" element={<StudentsPage />} />
+
+        <Route path="/attendance" element={<AttendancePage />} />
+
+        <Route path="/academic-years" element={<AcademicYearsPage />} />
+
+        <Route path="/classrooms" element={<ClassroomsPage />} />
 
         <Route path="/students/new" element={<AddStudentPage />} />
 

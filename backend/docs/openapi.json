@@ -1,14 +1,107 @@
 {
   "openapi": "3.0.3",
-  "info": { "title": "Student Management API", "version": "2.1.0" },
-  "servers": [{ "url": "/api/v1" }],
+  "info": {
+    "title": "Student Management API",
+    "version": "2.1.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
   "paths": {
-    "/health": { "get": { "summary": "Liveness check", "responses": { "200": { "description": "OK" } } } },
-    "/ready": { "get": { "summary": "Readiness check", "responses": { "200": { "description": "Ready" }, "503": { "description": "Not ready" } } } },
-    "/students": { "get": { "summary": "List students" }, "post": { "summary": "Create student" } },
-    "/students/{id}": { "get": { "summary": "Get student" }, "patch": { "summary": "Update student" }, "delete": { "summary": "Archive student" } },
-    "/students/{id}/restore": { "post": { "summary": "Restore archived student" } },
-    "/students/bulk": { "patch": { "summary": "Bulk update student status" } },
-    "/students/{id}/audit": { "get": { "summary": "Get student audit history" } }
+    "/health": {
+      "get": {
+        "summary": "Liveness check",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness check",
+        "responses": {
+          "200": {
+            "description": "Ready"
+          },
+          "503": {
+            "description": "Not ready"
+          }
+        }
+      }
+    },
+    "/students": {
+      "get": {
+        "summary": "List students"
+      },
+      "post": {
+        "summary": "Create student"
+      }
+    },
+    "/students/{id}": {
+      "get": {
+        "summary": "Get student"
+      },
+      "patch": {
+        "summary": "Update student"
+      },
+      "delete": {
+        "summary": "Archive student"
+      }
+    },
+    "/students/{id}/restore": {
+      "post": {
+        "summary": "Restore archived student"
+      }
+    },
+    "/students/bulk": {
+      "patch": {
+        "summary": "Bulk update student status"
+      }
+    },
+    "/students/{id}/audit": {
+      "get": {
+        "summary": "Get student audit history"
+      }
+    },
+    "/api/v1/attendance": {
+      "get": {
+        "summary": "List attendance records"
+      }
+    },
+    "/api/v1/attendance/bulk": {
+      "post": {
+        "summary": "Create or update class attendance"
+      }
+    },
+    "/api/v1/attendance/summary": {
+      "get": {
+        "summary": "Attendance summary"
+      }
+    },
+    "/api/v1/attendance/student/{studentId}": {
+      "get": {
+        "summary": "Student attendance history"
+      }
+    },
+    "/api/v1/academic-years": {
+      "get": {
+        "summary": "List academic years"
+      },
+      "post": {
+        "summary": "Create academic year"
+      }
+    },
+    "/api/v1/classrooms": {
+      "get": {
+        "summary": "List classrooms"
+      },
+      "post": {
+        "summary": "Create classroom"
+      }
+    }
   }
 }

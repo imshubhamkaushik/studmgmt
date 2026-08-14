@@ -109,3 +109,20 @@ cd backend
 npm run migrate:student-statuses -- --dry-run
 npm run migrate:student-statuses
 ```
+
+## Attendance
+
+The application now supports daily attendance for active students. Open **Attendance**, select a date, class, and section, load active students, mark `present`, `absent`, `late`, or `excused`, and save. Saving the same student/date again updates the existing record instead of creating duplicates.
+
+API endpoints:
+
+- `GET /api/v1/attendance`
+- `POST /api/v1/attendance/bulk`
+- `GET /api/v1/attendance/summary`
+- `GET /api/v1/attendance/student/:studentId`
+
+Attendance is protected by a unique `student + date` database index. Future dates and duplicate student IDs inside a bulk request are rejected.
+
+## Academic structure
+
+The application now supports **Academic Years** and **Classrooms** without destructively migrating existing students. Create an academic year, set one active, then create class/section classrooms with optional capacity. This is a compatibility bridge for the existing student `class` and `section` fields; the next migration phase can attach students to year-specific enrollments before promotion is enabled.

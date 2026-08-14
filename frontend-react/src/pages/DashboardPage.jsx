@@ -49,6 +49,12 @@ export default function DashboardPage() {
         </article>
 
         <article className="stat-card">
+          <span className="stat-card-label">Today&apos;s Attendance</span>
+          <strong className="stat-card-value">{stats?.todayAttendance?.percentage ?? 0}%</strong>
+          <span className="stat-card-description">{stats?.todayAttendance?.present ?? 0} present · {stats?.todayAttendance?.absent ?? 0} absent</span>
+        </article>
+
+        <article className="stat-card">
           <span className="stat-card-label">Classes</span>
 
           <strong className="stat-card-value">

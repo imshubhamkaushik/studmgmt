@@ -4,6 +4,9 @@ import mongoose from "mongoose";
 
 import studentRoutes from "./routes/student.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import academicYearRoutes from "./routes/academic-year.routes.js";
+import classroomRoutes from "./routes/classroom.routes.js";
+import attendanceRoutes from "./routes/attendance.routes.js";
 import { AppError } from "./utils/AppError.js";
 import { notFoundHandler } from "./middleware/not-found.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
@@ -42,6 +45,9 @@ app.get("/api/v1/ready", (req, res) => {
 
 app.use("/api/v1/students", studentRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/academic-years", academicYearRoutes);
+app.use("/api/v1/classrooms", classroomRoutes);
+app.use("/api/v1/attendance", attendanceRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 

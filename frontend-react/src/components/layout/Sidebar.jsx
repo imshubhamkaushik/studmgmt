@@ -11,6 +11,13 @@ const navigationItems = [
     label: "Students",
     icon: "◉",
   },
+  {
+    to: "/attendance",
+    label: "Attendance",
+    icon: "✓",
+  },
+  { to: "/academic-years", label: "Academic Years", icon: "◷" },
+  { to: "/classrooms", label: "Classrooms", icon: "▤" },
 ];
 
 export default function Sidebar() {

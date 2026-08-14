@@ -11,6 +11,12 @@ export const queryKeys = {
     detail: (id) => ["students", "detail", id],
   },
 
+  attendance: {
+    all: ["attendance"],
+    list: (params) => ["attendance", "list", params],
+    summary: (params) => ["attendance", "summary", params],
+  },
+
   dashboard: {
     all: ["dashboard"],
 

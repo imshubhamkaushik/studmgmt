@@ -1,0 +1,10 @@
+import { Router } from "express";
+import * as controller from "../controllers/attendance.controller.js";
+import { validateBulkAttendance } from "../validators/attendance.validator.js";
+import { validateObjectId } from "../middleware/validate-object-id.middleware.js";
+const router = Router();
+router.get("/", controller.getAttendance);
+router.get("/summary", controller.getAttendanceSummary);
+router.get("/student/:studentId", validateObjectId("studentId"), controller.getStudentAttendanceHistory);
+router.post("/bulk", validateBulkAttendance, controller.markBulkAttendance);
+export default router;
