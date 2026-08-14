@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 import { useDashboardStats } from "../hooks/useDashboard";
 
@@ -10,7 +11,8 @@ import { formatDate } from "../utils/date";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
 
 export default function DashboardPage() {
-  const { data, isLoading, isError, error, refetch } = useDashboardStats();
+  const [range, setRange] = useState("all");
+  const { data, isLoading, isError, error, refetch } = useDashboardStats(range);
 
   if (isLoading) {
     return <LoadingState message="Loading dashboard..." />;
@@ -29,6 +31,11 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-page">
+      <div className="dashboard-range" role="group" aria-label="Dashboard date range">
+        {[["all", "All Time"], ["7d", "Last 7 Days"], ["30d", "Last 30 Days"]].map(([value, label]) => (
+          <button key={value} type="button" className={`button ${range === value ? "button-primary" : "button-secondary"}`} onClick={() => setRange(value)}>{label}</button>
+        ))}
+      </div>
       <section className="stats-grid">
         <article className="stat-card">
           <span className="stat-card-label">Total Students</span>
@@ -138,6 +145,16 @@ export default function DashboardPage() {
             />
           )}
         </article>
+      </section>
+
+      <section className="dashboard-card recently-updated-card">
+        <div className="section-heading"><div><h2>Recently Updated</h2><p>Latest changes to student records.</p></div></div>
+        {stats?.recentlyUpdated?.length > 0 ? <div className="recent-students-list">
+          {stats.recentlyUpdated.map((student) => <Link key={student._id} to={`/students/${student._id}`} className="recent-student-item">
+            <div><strong>{student.name}</strong><span>{student.studentId} · Class {student.class}-{student.section} · {student.status ?? "active"}</span></div>
+            <time>{formatDate(student.updatedAt)}</time>
+          </Link>)}
+        </div> : <EmptyState title="No recent updates" message="Updates will appear here when student records change." />}
       </section>
     </div>
   );

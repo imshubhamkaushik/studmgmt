@@ -4,6 +4,7 @@ import { AppError } from "../utils/AppError.js";
 import { generateStudentId } from "./student-id.service.js";
 import { normalizeAndValidateStudentPayload } from "../validators/student.validator.js";
 import { writeAudit, getEntityAudit } from "./audit.service.js";
+import { applyTeacherStudentScope, assertTeacherStudentAccess } from "./teacher-access.service.js";
 
 const SORTABLE_FIELDS = new Set(["studentId", "name", "rollNo", "class", "section", "status", "dob", "createdAt", "updatedAt"]);
 const MAX_PAGE = 100000;
@@ -56,14 +57,14 @@ export const createStudent = async (studentData, requestId = null) => {
   return student;
 };
 
-export const getStudents = async (query) => {
+export const getStudents = async (query, user = null) => {
   const page = parsePositiveInteger(query.page, 1, "page", MAX_PAGE);
   const limit = parsePositiveInteger(query.limit, 10, "limit", MAX_LIMIT);
   const sortBy = typeof query.sortBy === "string" ? query.sortBy : "createdAt";
   const sortOrder = typeof query.sortOrder === "string" ? query.sortOrder.toLowerCase() : "desc";
   if (!SORTABLE_FIELDS.has(sortBy)) throw new AppError(`sortBy must be one of: ${[...SORTABLE_FIELDS].join(", ")}.`, 400);
   if (!['asc', 'desc'].includes(sortOrder)) throw new AppError("sortOrder must be either asc or desc.", 400);
-  const filter = buildStudentFilter(query);
+  const filter = await applyTeacherStudentScope(user, buildStudentFilter(query));
   const sortDirection = sortOrder === "asc" ? 1 : -1;
   const [students, totalItems] = await Promise.all([
     Student.find(filter).sort({ [sortBy]: sortDirection, _id: sortDirection }).skip((page - 1) * limit).limit(limit).lean(),
@@ -78,7 +79,7 @@ export const getStudentFilterOptions = async () => {
   return { classes: classes.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), sections: sections.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })), statuses: STUDENT_STATUSES };
 };
 
-export const getStudentsForExport = async (query) => Student.find(buildStudentFilter(query)).sort({ class: 1, section: 1, rollNo: 1, _id: 1 }).lean();
+export const getStudentsForExport = async (query, user = null) => Student.find(await applyTeacherStudentScope(user, buildStudentFilter(query))).sort({ class: 1, section: 1, rollNo: 1, _id: 1 }).lean();
 
 export const importStudents = async (rows) => {
   if (!Array.isArray(rows) || rows.length === 0) throw new AppError("At least one student row is required.", 400);
@@ -103,7 +104,8 @@ export const importStudents = async (rows) => {
   return created;
 };
 
-export const getStudentById = async (studentId) => {
+export const getStudentById = async (studentId, user = null) => {
+  await assertTeacherStudentAccess(user, studentId);
   const student = await Student.findOne({ _id: studentId, isDeleted: { $ne: true } }).lean();
   if (!student) throw new AppError("Student not found.", 404);
   return student;
@@ -144,4 +146,17 @@ export const bulkUpdateStudents = async ({ ids, status }, requestId = null) => {
   return { matched: result.matchedCount, modified: result.modifiedCount };
 };
 
-export const getStudentAuditHistory = async (studentId) => getEntityAudit("student", studentId);
+export const getStudentAuditHistory = async (studentId, user = null) => { await assertTeacherStudentAccess(user, studentId); return getEntityAudit("student", studentId); };
+
+export const checkStudentAvailability = async ({ class: className, section, rollNo, excludeId } = {}) => {
+  const normalizedClass = parseFilterText(className, "class", 50);
+  const normalizedSection = parseFilterText(section, "section", 20);
+  const parsedRollNo = Number(rollNo);
+  if (!normalizedClass || !normalizedSection || !Number.isInteger(parsedRollNo) || parsedRollNo < 1) {
+    throw new AppError("class, section and a positive integer rollNo are required.", 400);
+  }
+  const filter = { class: normalizedClass, section: normalizedSection, rollNo: parsedRollNo, isDeleted: { $ne: true } };
+  if (excludeId) filter._id = { $ne: excludeId };
+  const existing = await Student.exists(filter);
+  return { available: !existing, class: normalizedClass, section: normalizedSection, rollNo: parsedRollNo };
+};

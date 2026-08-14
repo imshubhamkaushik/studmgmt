@@ -42,6 +42,7 @@ export function getStudentFilters(searchParams) {
     className: searchParams.get("class") ?? "",
     section: searchParams.get("section") ?? "",
     status: searchParams.get("status") ?? "",
+    includeDeleted: searchParams.get("includeDeleted") === "true",
   };
 }
 

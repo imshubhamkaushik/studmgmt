@@ -126,3 +126,41 @@ Attendance is protected by a unique `student + date` database index. Future date
 ## Academic structure
 
 The application now supports **Academic Years** and **Classrooms** without destructively migrating existing students. Create an academic year, set one active, then create class/section classrooms with optional capacity. This is a compatibility bridge for the existing student `class` and `section` fields; the next migration phase can attach students to year-specific enrollments before promotion is enabled.
+
+
+## Enrollment and Promotion
+Students can now be assigned to an Academic Year and Classroom through `/api/v1/enrollments`. Enrollment history is preserved. Capacity and destination roll-number conflicts are validated. Promotion is available through `POST /api/v1/enrollments/promote`; it prevalidates the complete batch before changing source enrollments and creating destination placements.
+
+
+## Authentication and roles
+
+The API now requires a Bearer access token for all business endpoints. Configure `JWT_SECRET` (at least 32 characters) and bootstrap the first administrator with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Access tokens are short-lived (default 15 minutes). Roles are `admin`, `staff`, and `teacher`.
+
+- Admin: full management, academic structure, promotion and users.
+- Staff: student and enrollment management plus attendance.
+- Teacher: read access and attendance marking.
+
+Create additional users through the **Users & Roles** screen as an administrator. Do not commit real secrets or bootstrap passwords.
+
+## Phase 11 production hardening
+Refresh-session rotation, HttpOnly refresh cookies, server-side session revocation, logout, user-deactivation session revocation, and corrected production Docker environment wiring are included. See `PRODUCTION_HARDENING.md`.
+
+
+## Phase 13: Audit identity and teacher classroom access
+
+- Audit writes automatically capture the authenticated actor from request context.
+- Admins can assign/revoke teachers to/from classrooms through `/api/v1/teacher-classroom-assignments`.
+- Teachers are server-side restricted from marking or querying attendance for classrooms they are not assigned to.
+- Assignment checks are authorization controls; hiding frontend navigation alone is not relied on for security.
+
+
+## Phase 13 teacher access
+Teachers are assigned to classrooms by administrators. Server-side student and enrollment queries are scoped to assigned classrooms; direct student profile and audit-history access is denied when the teacher has no active placement for that student.
+
+## Production operations
+
+See [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md) for Docker startup, health/readiness checks, backup, restore drills, secrets, TLS, and scaling requirements.
+
+### Phase 20 verification fix
+
+A dependency consistency issue was found during the final validation pass: `cookie-parser` had been added to `backend/package.json` in an earlier phase without a matching `backend/package-lock.json` update, which would cause `npm ci` in CI and Docker builds to fail. The backend now uses a small internal cookie-parsing middleware, removing that unsynchronised dependency. `npm ci` can therefore use the committed lockfile consistently. Docker itself could not be executed in this workspace because the Docker CLI is unavailable.

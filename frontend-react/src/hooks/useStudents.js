@@ -8,6 +8,8 @@ import {
   updateStudent,
   getStudentFilterOptions,
   importStudents,
+  restoreStudent,
+  bulkUpdateStudents,
 } from "../api/students";
 import { queryKeys } from "../api/queryKeys";
 import { isValidObjectId } from "../utils/objectId";
@@ -74,6 +76,19 @@ export const useDeleteStudent = () => {
 
   return useMutation({
     mutationFn: deleteStudent,
+    onSuccess: () => invalidateStudentData(queryClient),
+  });
+};
+
+export const useRestoreStudent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({ mutationFn: restoreStudent, onSuccess: () => invalidateStudentData(queryClient) });
+};
+
+export const useBulkUpdateStudents = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bulkUpdateStudents,
     onSuccess: () => invalidateStudentData(queryClient),
   });
 };

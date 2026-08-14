@@ -1,4 +1,5 @@
 import { useLocation } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
 
 const getPageTitle = (pathname) => {
   if (pathname === "/dashboard") {
@@ -44,6 +45,7 @@ const getPageTitle = (pathname) => {
 
 export default function Header() {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const { title, description } = getPageTitle(location.pathname);
 
@@ -54,6 +56,7 @@ export default function Header() {
 
         {description && <p>{description}</p>}
       </div>
+      <div className="header-user"><span>{user?.name} · {user?.role}</span><button type="button" onClick={logout}>Sign out</button></div>
     </header>
   );
 }

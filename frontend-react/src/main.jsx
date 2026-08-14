@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import App from "./App";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import { ToastProvider } from "./components/common/ToastProvider";
+import { AuthProvider } from "./auth/AuthProvider";
 import "./styles/globals.css";
 import "./styles/components.css";
 
@@ -17,6 +19,6 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <ErrorBoundary><BrowserRouter><QueryClientProvider client={queryClient}><App /></QueryClientProvider></BrowserRouter></ErrorBoundary>
+    <ErrorBoundary><ToastProvider><AuthProvider><BrowserRouter><QueryClientProvider client={queryClient}><App /></QueryClientProvider></BrowserRouter></AuthProvider></ToastProvider></ErrorBoundary>
   </React.StrictMode>,
 );

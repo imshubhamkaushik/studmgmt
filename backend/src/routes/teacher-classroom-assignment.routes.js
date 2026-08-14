@@ -1,0 +1,2 @@
+import {Router} from "express";import * as c from "../controllers/teacher-classroom-assignment.controller.js";import {authorize} from "../middleware/auth.middleware.js";import {validateObjectId} from "../middleware/validate-object-id.middleware.js";
+const r=Router();r.get("/",authorize("admin"),c.list);r.post("/",authorize("admin"),c.assign);r.patch("/:id/revoke",authorize("admin"),validateObjectId(),c.revoke);export default r;

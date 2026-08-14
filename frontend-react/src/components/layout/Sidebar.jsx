@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../auth/AuthProvider";
 
 const navigationItems = [
   {
@@ -16,11 +17,15 @@ const navigationItems = [
     label: "Attendance",
     icon: "✓",
   },
-  { to: "/academic-years", label: "Academic Years", icon: "◷" },
-  { to: "/classrooms", label: "Classrooms", icon: "▤" },
+  { to: "/academic-years", label: "Academic Years", icon: "◷", roles: ["admin"] },
+  { to: "/classrooms", label: "Classrooms", icon: "▤", roles: ["admin"] },
+  { to: "/enrollments", label: "Enrollments", icon: "↔", roles: ["admin","staff"] },
+  { to: "/promotions", label: "Promotions", icon: "⇧", roles: ["admin"] },
+  { to: "/users", label: "Users & Roles", icon: "♙", roles: ["admin"] },
 ];
 
 export default function Sidebar() {
+  const { user } = useAuth();
   return (
     <aside className="sidebar">
       <NavLink to="/dashboard" className="app-brand">
@@ -33,7 +38,7 @@ export default function Sidebar() {
       </NavLink>
 
       <nav className="sidebar-nav" aria-label="Main navigation">
-        {navigationItems.map((item) => (
+        {navigationItems.filter((item) => !item.roles || item.roles.includes(user?.role)).map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
@@ -52,7 +57,7 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <span>StudentHub</span>
-        <small>Version 1.0</small>
+        <small>{user?.role || "user"}</small>
       </div>
     </aside>
   );

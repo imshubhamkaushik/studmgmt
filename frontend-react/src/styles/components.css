@@ -899,3 +899,41 @@
 
 /* Attendance */
 .attendance-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;align-items:end}.attendance-controls label{display:grid;gap:.4rem;font-size:.9rem;font-weight:600}.attendance-controls input,.attendance-controls select,.attendance-row select{width:100%;padding:.65rem .7rem;border:1px solid #d9dce3;border-radius:8px;background:#fff}.attendance-list{margin-top:1.5rem}.attendance-table{display:grid;gap:.5rem}.attendance-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;border:1px solid #edf0f3;border-radius:10px}.attendance-row div{display:grid;gap:.25rem}.attendance-row span{font-size:.82rem;color:#70747d}.attendance-row select{max-width:150px;text-transform:capitalize}@media(max-width:800px){.attendance-controls{grid-template-columns:1fr 1fr}.attendance-row{align-items:stretch;flex-direction:column}.attendance-row select{max-width:none}}@media(max-width:480px){.attendance-controls{grid-template-columns:1fr}}
+
+.form-success {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: 0.5rem;
+}
+
+.muted-text { margin-top: 0.75rem; opacity: 0.75; }
+
+
+/* Phase 9 UX */
+.toast-container{position:fixed;right:1rem;bottom:1rem;z-index:1000;display:grid;gap:.65rem;max-width:min(26rem,calc(100vw - 2rem))}
+.toast{display:flex;justify-content:space-between;gap:1rem;align-items:center;padding:.85rem 1rem;border-radius:.65rem;box-shadow:0 10px 30px rgba(0,0,0,.18);background:#fff;border-left:4px solid #16a34a}
+.toast-error{border-left-color:#dc2626}.toast button{border:0;background:transparent;font-size:1.2rem;cursor:pointer}
+.dashboard-range,.saved-views{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}.saved-view{display:inline-flex;align-items:center;border:1px solid #d1d5db;border-radius:999px;overflow:hidden}.saved-view button{border:0;background:#fff;padding:.3rem .55rem;cursor:pointer}.saved-view button+button{border-left:1px solid #d1d5db}
+.csv-preview{width:100%;margin-top:1rem;padding:1rem;border:1px solid #d1d5db;border-radius:.75rem;background:#fff}.csv-preview-table{overflow:auto;max-height:20rem}.csv-preview table{width:100%;border-collapse:collapse}.csv-preview th,.csv-preview td{padding:.55rem;border-bottom:1px solid #e5e7eb;text-align:left;white-space:nowrap}
+.recently-updated-card{margin-top:1rem}
+@media (max-width: 768px){
+  .page-toolbar{display:block}.toolbar-actions,.import-export-actions{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}.toolbar-actions .button,.import-export-actions .button{flex:1 1 auto}
+  .bulk-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}.bulk-actions select{min-width:8rem}
+  .dashboard-range .button{flex:1 1 30%}.stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dashboard-grid{grid-template-columns:1fr}.student-table-wrapper{overflow-x:auto}.student-table{min-width:720px}
+  .csv-preview{padding:.75rem}.section-heading{flex-wrap:wrap;gap:.75rem}.toast-container{left:1rem;right:1rem;bottom:1rem;max-width:none}
+}
+@media print{
+  .sidebar,.header,.page-toolbar,.bulk-actions,.toast-container,.pagination,.button,.saved-views,.import-export-actions{display:none!important}
+  .app-layout,.main-content{display:block!important;margin:0!important;padding:0!important}.student-table{width:100%!important}
+}
+
+/* Authentication */
+.auth-page{min-height:100vh;display:grid;place-items:center;padding:1.5rem;background:#f5f7fb}
+.auth-card{width:min(100%,420px);display:grid;gap:1rem;padding:2rem;border:1px solid #e5e7eb;border-radius:14px;background:#fff;box-shadow:0 10px 35px rgba(0,0,0,.08)}
+.auth-card label{display:grid;gap:.4rem;font-weight:600}.auth-card input,.user-form input,.user-form select{width:100%;padding:.7rem;border:1px solid #cbd5e1;border-radius:8px}
+.auth-card button,.user-form button{padding:.7rem 1rem;border:0;border-radius:8px;cursor:pointer}
+.header-user{display:flex;align-items:center;gap:.75rem;font-size:.9rem}.header-user button{padding:.45rem .7rem}
+.user-form{display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:.75rem;margin:1rem 0}
+@media(max-width:800px){.header-user{margin-top:.75rem}.user-form{grid-template-columns:1fr}.auth-card{padding:1.25rem}}

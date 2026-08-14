@@ -12,7 +12,7 @@ export const createStudent = asyncHandler(async (req, res) => {
 });
 
 export const getStudents = asyncHandler(async (req, res) => {
-  const result = await studentService.getStudents(req.query);
+  const result = await studentService.getStudents(req.query, req.user);
 
   res.status(200).json({
     success: true,
@@ -22,7 +22,7 @@ export const getStudents = asyncHandler(async (req, res) => {
 });
 
 export const getStudentById = asyncHandler(async (req, res) => {
-  const student = await studentService.getStudentById(req.params.id);
+  const student = await studentService.getStudentById(req.params.id, req.user);
 
   res.status(200).json({
     success: true,
@@ -53,6 +53,11 @@ export const deleteStudent = asyncHandler(async (req, res) => {
   });
 });
 
+export const checkStudentAvailability = asyncHandler(async (req, res) => {
+  const data = await studentService.checkStudentAvailability(req.query);
+  res.status(200).json({ success: true, data });
+});
+
 export const getStudentFilterOptions = asyncHandler(async (req, res) => {
   const options = await studentService.getStudentFilterOptions();
   res.status(200).json({ success: true, data: options });
@@ -64,7 +69,7 @@ const escapeCsv = (value) => {
 };
 
 export const exportStudents = asyncHandler(async (req, res) => {
-  const students = await studentService.getStudentsForExport(req.query);
+  const students = await studentService.getStudentsForExport(req.query, req.user);
   const headers = ["Student ID", "Name", "Class", "Section", "Roll No", "Status", "Date of Birth", "Created At"];
   const lines = students.map((student) => [student.studentId, student.name, student.class, student.section, student.rollNo, student.status, student.dob, student.createdAt].map(escapeCsv).join(","));
   const csv = [headers.join(","), ...lines].join("\r\n");
@@ -88,6 +93,6 @@ export const bulkUpdateStudents = asyncHandler(async (req, res) => {
 });
 
 export const getStudentAuditHistory = asyncHandler(async (req, res) => {
-  const data = await studentService.getStudentAuditHistory(req.params.id);
+  const data = await studentService.getStudentAuditHistory(req.params.id, req.user);
   res.status(200).json({ success: true, data });
 });

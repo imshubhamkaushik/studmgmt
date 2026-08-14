@@ -1,8 +1,12 @@
 import { AuditLog } from "../models/audit-log.model.js";
+import { getRequestActor } from "../utils/request-store.js";
 
-export const writeAudit = async ({ entityType, entityId, action, changes = null, requestId = null }) => {
+export const writeAudit = async ({ entityType, entityId, action, changes = null, requestId = null, actor = null, actorEmail = null }) => {
   try {
-    await AuditLog.create({ entityType, entityId, action, changes, requestId });
+    const requestActor = getRequestActor();
+    const resolvedActor = actor || requestActor?.sub || null;
+    const resolvedEmail = actorEmail || requestActor?.email || null;
+    await AuditLog.create({ entityType, entityId, action, changes, requestId, actor: resolvedActor, actorEmail: resolvedEmail });
   } catch (error) {
     console.error(JSON.stringify({ level: "error", event: "audit_write_failed", message: error.message, requestId }));
   }

@@ -1,21 +1,21 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import mongoose from "mongoose";
-
-dotenv.config();
 
 import app from "./app.js";
 import { connectDatabase } from "./config/db.js";
 import { loadEnv } from "./config/env.js";
+import { bootstrapAdmin } from "./services/auth.service.js";
 
 const { port: PORT } = loadEnv();
 
 let server;
-
 let shuttingDown = false;
 
 const shutdown = (signal) => {
   if (shuttingDown) return;
+
   shuttingDown = true;
+
   console.log(`${signal} received. Shutting down gracefully...`);
 
   server?.close(async () => {
@@ -23,6 +23,7 @@ const shutdown = (signal) => {
       await mongoose.connection.close();
 
       console.log("MongoDB connection closed.");
+
       process.exit(0);
     } catch (error) {
       console.error("Error during graceful shutdown:", error);
@@ -41,6 +42,8 @@ const shutdown = (signal) => {
 const startServer = async () => {
   try {
     await connectDatabase();
+
+    await bootstrapAdmin();
 
     server = app.listen(PORT, () => {
       console.log(`Server is running on http://localhost:${PORT}`);

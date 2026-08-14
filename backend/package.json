@@ -8,8 +8,9 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "migrate:student-ids": "node src/scripts/migrate-student-ids.js",
-    "test": "node --test",
-    "migrate:student-statuses": "node src/scripts/migrate-student-statuses.js"
+    "test": "node --test test/*.test.js",
+    "migrate:student-statuses": "node src/scripts/migrate-student-statuses.js",
+    "test:integration": "node --test test/integration/*.test.js"
   },
   "keywords": [
     "student-management",
