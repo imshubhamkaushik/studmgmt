@@ -41,7 +41,6 @@ export default function AttendancePage() {
   };
 
   return <div className="attendance-page">
-    <div className="page-toolbar"><div><h1>Attendance</h1><p>Load an active class, mark exceptions, and save the whole day at once.</p></div></div>
     <section className="form-card attendance-controls">
       <label>Date<input type="date" value={date} max={today()} onChange={(e) => setDate(e.target.value)} /></label>
       <label>Class<select value={className} onChange={(e) => { setClassName(e.target.value); setSection(""); }}><option value="">Select class</option>{options.classes.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
