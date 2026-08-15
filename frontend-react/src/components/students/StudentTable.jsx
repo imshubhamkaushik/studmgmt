@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { formatDate, formatDateOnly } from "../../utils/date";
+import Avatar from "../common/Avatar";
 
 const SORTABLE_COLUMNS = [
   { field: "studentId", label: "Student ID" },
@@ -110,6 +111,7 @@ export default function StudentTable({
                   to={`/students/${student._id}`}
                   className="student-name-link"
                 >
+                  <Avatar name={student.name} size="sm" />
                   {student.name}
                 </Link>
               </td>
@@ -120,6 +122,7 @@ export default function StudentTable({
                 <span
                   className={`status-badge status-${student.status ?? "active"}`}
                 >
+                  <span className="status-badge-dot" aria-hidden="true" />
                   {student.status ?? "active"}
                 </span>
               </td>

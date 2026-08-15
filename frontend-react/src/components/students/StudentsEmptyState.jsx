@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SearchX, Users } from "lucide-react";
 
 import EmptyState from "../common/EmptyState";
 
@@ -27,7 +28,14 @@ export default function StudentsEmptyState({
     onPageChange,
   });
 
-  return <EmptyState title={title} message={message} action={action} />;
+  return (
+    <EmptyState
+      title={title}
+      message={message}
+      action={action}
+      icon={search ? SearchX : Users}
+    />
+  );
 }
 
 function getEmptyTitle({ hasStudents, search }) {

@@ -6,6 +6,7 @@ import { getEnrollments } from "../api/enrollments";
 import { getStudentAuditHistory } from "../api/students";
 import LoadingState from "../components/common/LoadingState";
 import ErrorState from "../components/common/ErrorState";
+import Avatar from "../components/common/Avatar";
 import { formatDate, formatDateOnly } from "../utils/date";
 import { isValidObjectId } from "../utils/objectId";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
@@ -67,13 +68,19 @@ export default function StudentDetailsPage() {
     <div className="student-details-page">
       <section className="details-card">
         <div className="details-header">
-          <div>
-            <span className="details-student-id">{student.studentId}</span>
-            <h2>{student.name}</h2>
-            <p>
-              <span className={`status-badge status-${status}`}>{status}</span>{" "}
-              Student record
-            </p>
+          <div className="details-header-main">
+            <Avatar name={student.name} size="lg" />
+            <div>
+              <span className="details-student-id">{student.studentId}</span>
+              <h2>{student.name}</h2>
+              <p>
+                <span className={`status-badge status-${status}`}>
+                  <span className="status-badge-dot" aria-hidden="true" />
+                  {status}
+                </span>{" "}
+                Student record
+              </p>
+            </div>
           </div>
           <Link
             to={`/students/${student._id}/edit`}
