@@ -35,7 +35,7 @@ export const useStudents = (params) =>
 export const useStudentFilterOptions = () =>
   useQuery({
     queryKey: [...queryKeys.students.all, "filter-options"],
-    queryFn: getStudentFilterOptions,
+    queryFn: () => getStudentFilterOptions(),
     staleTime: 60_000,
   });
 

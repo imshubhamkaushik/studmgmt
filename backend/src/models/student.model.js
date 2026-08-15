@@ -42,7 +42,7 @@ const studentSchema = new mongoose.Schema(
       default: "active",
       index: true,
     },
-    admissionNo: { type: String, trim: true, immutable: true, sparse: true },
+    admissionNo: { type: String, trim: true, immutable: true },
     dob: { type: Date, required: [true, "Date of birth is required."] },
     isDeleted: { type: Boolean, default: false, index: true },
     deletedAt: { type: Date, default: null },
