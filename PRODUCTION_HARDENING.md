@@ -18,7 +18,7 @@ Set a strong `JWT_SECRET` (32+ characters), `MONGODB_URI`, and production CORS o
 Run `mongodump` against the production database on a scheduled, encrypted, access-controlled backup target. Regularly test restores with `mongorestore`; a backup that has never been restored is not a verified backup.
 
 ## Remaining production work
-Use a managed/shared rate-limit store for multi-instance deployments, terminate TLS at a trusted proxy/load balancer, and add monitoring/alerting for failed login spikes and backup failures.
+Terminate TLS at a trusted proxy/load balancer, add monitoring/alerting for failed login spikes and backup failures, and set up log shipping (the app logs structured JSON to stdout but nothing forwards it anywhere by default).
 
 ## Phase 15 additions
 
@@ -27,4 +27,8 @@ Use a managed/shared rate-limit store for multi-instance deployments, terminate 
 - Startup now fails when `JWT_SECRET` is missing or shorter than 32 characters.
 - `ops/backup/backup-mongodb.sh` creates compressed archives, SHA-256 checksums, and applies local retention.
 - `ops/backup/restore-mongodb.sh` verifies checksums when available and restores with `--drop`; always run restore drills against an isolated target first.
-- Full horizontal scaling still requires replacing the process-local rate limiter with a shared store.
+- The rate limiter is Redis-backed when `REDIS_URL` is set (already the case in `docker-compose.yml`), making it safe to run multiple backend replicas behind a load balancer. It falls back to a process-local in-memory store only when `REDIS_URL` is unset or Redis is unreachable — if you deploy outside the bundled Compose stack (Kubernetes, ECS, bare metal), make sure `REDIS_URL` is set in that environment too, or each replica will rate-limit independently instead of sharing one counter. This is covered by an integration test in CI (see `CI_AND_TESTING.md`).
+
+## Account lockout (Phase 22)
+
+In addition to the IP-based rate limiter above, individual accounts now lock for 15 minutes after 5 consecutive failed login attempts, independent of source IP. Admins can see lock status in the Users page and clear it via an explicit unlock action or by resetting the user's password — either clears `failedLoginAttempts`/`lockedUntil` without waiting out the timer.

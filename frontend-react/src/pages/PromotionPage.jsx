@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ArrowUpFromLine } from "lucide-react";
 import { getAcademicYears } from "../api/academicYears";
 import { getClassrooms } from "../api/classrooms";
 import { getEnrollments, promoteStudents } from "../api/enrollments";
@@ -160,95 +161,106 @@ export default function PromotionPage() {
 
   return (
     <main className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Academic progression</p>
-          <h1>Promote Students</h1>
-          <p>
-            Move selected active enrollments to a new academic year and
-            classroom while preserving enrollment history.
-          </p>
-        </div>
-      </div>
-
-      {error && <p className="form-error">{error}</p>}
-      {message && <p className="form-success">{message}</p>}
+      {error && <div className="inline-error">{error}</div>}
+      {message && <p className="import-success">{message}</p>}
 
       <section className="card">
         <form className="student-form" onSubmit={submit}>
-          <select
-            value={form.fromAcademicYearId}
-            onChange={(e) =>
-              setForm((current) => ({
-                ...current,
-                fromAcademicYearId: e.target.value,
-              }))
-            }
-          >
-            <option value="">Source academic year</option>
-            {years.map((year) => (
-              <option key={year._id} value={year._id}>
-                {year.name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="button secondary"
-            onClick={loadSource}
-            disabled={loading || !form.fromAcademicYearId}
-          >
-            {loading ? "Loading..." : "Load Students"}
-          </button>
-          <select
-            value={form.toAcademicYearId}
-            onChange={(e) =>
-              setForm((current) => ({
-                ...current,
-                toAcademicYearId: e.target.value,
-                toClassroomId: "",
-              }))
-            }
-          >
-            <option value="">Destination academic year</option>
-            {years
-              .filter((year) => year._id !== form.fromAcademicYearId)
-              .map((year) => (
+          <div>
+            <label className="form-field-label" htmlFor="pp-source-year">Source Academic Year</label>
+            <select
+              id="pp-source-year"
+              value={form.fromAcademicYearId}
+              onChange={(e) =>
+                setForm((current) => ({
+                  ...current,
+                  fromAcademicYearId: e.target.value,
+                }))
+              }
+            >
+              <option value="">Source academic year</option>
+              {years.map((year) => (
                 <option key={year._id} value={year._id}>
                   {year.name}
-                  {year.isActive ? " (Active)" : ""}
                 </option>
               ))}
-          </select>
-          <select
-            value={form.toClassroomId}
-            onChange={(e) =>
-              setForm((current) => ({
-                ...current,
-                toClassroomId: e.target.value,
-              }))
-            }
-            disabled={!form.toAcademicYearId}
-          >
-            <option value="">Destination classroom</option>
-            {destinationRooms.map((room) => (
-              <option key={room._id} value={room._id}>
-                {classroomLabel(room)}
-                {room.capacity
-                  ? ` (${room.studentCount || 0}/${room.capacity})`
-                  : ""}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="button primary"
-            disabled={promoting || !selected.length || exceedsCapacity}
-          >
-            {promoting
-              ? "Promoting..."
-              : `Promote ${selected.length || "Selected"} Student${selected.length === 1 ? "" : "s"}`}
-          </button>
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="pp-load">&nbsp;</label>
+            <button
+              id="pp-load"
+              type="button"
+              className="button button-secondary"
+              onClick={loadSource}
+              disabled={loading || !form.fromAcademicYearId}
+              style={{ width: "100%" }}
+            >
+              {loading ? "Loading..." : "Load Students"}
+            </button>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="pp-dest-year">Destination Academic Year</label>
+            <select
+              id="pp-dest-year"
+              value={form.toAcademicYearId}
+              onChange={(e) =>
+                setForm((current) => ({
+                  ...current,
+                  toAcademicYearId: e.target.value,
+                  toClassroomId: "",
+                }))
+              }
+            >
+              <option value="">Destination academic year</option>
+              {years
+                .filter((year) => year._id !== form.fromAcademicYearId)
+                .map((year) => (
+                  <option key={year._id} value={year._id}>
+                    {year.name}
+                    {year.isActive ? " (Active)" : ""}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="pp-dest-room">Destination Classroom</label>
+            <select
+              id="pp-dest-room"
+              value={form.toClassroomId}
+              onChange={(e) =>
+                setForm((current) => ({
+                  ...current,
+                  toClassroomId: e.target.value,
+                }))
+              }
+              disabled={!form.toAcademicYearId}
+            >
+              <option value="">Destination classroom</option>
+              {destinationRooms.map((room) => (
+                <option key={room._id} value={room._id}>
+                  {classroomLabel(room)}
+                  {room.capacity
+                    ? ` (${room.studentCount || 0}/${room.capacity})`
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="pp-submit">&nbsp;</label>
+            <button
+              id="pp-submit"
+              type="submit"
+              className="button button-primary"
+              disabled={promoting || !selected.length || exceedsCapacity}
+              style={{ width: "100%" }}
+            >
+              {promoting
+                ? "Promoting..."
+                : `Promote ${selected.length || "Selected"} Student${selected.length === 1 ? "" : "s"}`}
+            </button>
+          </div>
         </form>
         {selectedDestination && (
           <p className="muted-text">
@@ -262,7 +274,7 @@ export default function PromotionPage() {
 
       <section className="card">
         <div className="table-wrapper">
-          <table>
+          <table className="student-table">
             <thead>
               <tr>
                 <th>
@@ -285,7 +297,7 @@ export default function PromotionPage() {
             <tbody>
               {!loading && sourceRows.length === 0 && (
                 <tr>
-                  <td colSpan="6">
+                  <td colSpan="6" className="table-prompt-row">
                     Select a source academic year and load active enrollments.
                   </td>
                 </tr>

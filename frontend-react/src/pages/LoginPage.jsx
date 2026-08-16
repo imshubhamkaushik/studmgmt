@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { School, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth } from "../auth/useAuth";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
 
 export default function LoginPage() {

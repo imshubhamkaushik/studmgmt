@@ -22,4 +22,8 @@ export const queryKeys = {
 
     stats: () => ["dashboard", "stats"],
   },
+
+  audit: {
+    recent: (limit) => ["audit", "recent", limit],
+  },
 };

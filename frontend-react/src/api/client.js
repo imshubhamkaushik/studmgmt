@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ApiError } from "./ApiError";
+import { getAccessToken, setAccessToken } from "../auth/tokenStore";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -14,27 +15,17 @@ const apiClient = axios.create({
 
 let refreshPromise = null;
 
-const getAuth = () => {
-  try {
-    return JSON.parse(localStorage.getItem("studenthub.auth"));
-  } catch {
-    return null;
-  }
-};
-const setToken = (accessToken) => {
-  const auth = getAuth() || {};
-  const next = { ...auth, token: accessToken };
-  localStorage.setItem("studenthub.auth", JSON.stringify(next));
-  return next;
-};
-
 apiClient.interceptors.request.use((config) => {
-  const auth = getAuth();
-  if (auth?.token) config.headers.Authorization = `Bearer ${auth.token}`;
+  const token = getAccessToken();
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-async function refreshAccessToken() {
+// Exchanges the HttpOnly refresh-token cookie for a new short-lived access
+// token. Used both by the 401-retry interceptor below and by AuthProvider
+// on initial page load to silently re-establish a session without ever
+// having stored the access token itself.
+export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = axios
       .post(
@@ -67,17 +58,17 @@ apiClient.interceptors.response.use(
       original._retry = true;
       try {
         const token = await refreshAccessToken();
-        
+
         if (!token) throw new Error("No refreshed token returned");
-        
-        setToken(token);
-        
+
+        setAccessToken(token);
+
         original.headers ??= {};
         original.headers.Authorization = `Bearer ${token}`;
-        
+
         return apiClient(original);
       } catch {
-        localStorage.removeItem("studenthub.auth");
+        setAccessToken(null);
         window.dispatchEvent(new Event("auth:expired"));
       }
     }

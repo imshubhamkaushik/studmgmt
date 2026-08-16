@@ -12,6 +12,14 @@ const accessTtl = () => Number(process.env.JWT_ACCESS_TTL_SECONDS || 900);
 
 const refreshDays = () => Number(process.env.JWT_REFRESH_TTL_DAYS || 7);
 
+// Account-level lockout, independent of the IP-based rate limiter: after
+// LOCKOUT_THRESHOLD wrong passwords in a row *for this specific account*,
+// further attempts are rejected for LOCKOUT_MINUTES even from a different
+// IP. This is what stops a slow, distributed brute force against one
+// user's password that a per-IP limiter alone wouldn't catch.
+const LOCKOUT_THRESHOLD = 5;
+const LOCKOUT_MINUTES = 15;
+
 const publicUser = (u) => ({
   id: u._id.toString(),
   name: u.name,
@@ -73,13 +81,29 @@ export async function login({ email, password }, meta = {}) {
     email: String(email).trim().toLowerCase(),
   }).select("+passwordHash +passwordSalt");
   
-  if (
-    !user ||
-    !user.isActive ||
-    !verifyPassword(String(password), user.passwordHash, user.passwordSalt)
-  )
+  if (!user || !user.isActive)
     throw new AppError("Invalid email or password.", 401);
   
+  if (user.lockedUntil && user.lockedUntil > new Date()) {
+    const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 60000);
+    throw new AppError(
+      `This account is temporarily locked after too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.`,
+      423,
+    );
+  }
+  
+  if (!verifyPassword(String(password), user.passwordHash, user.passwordSalt)) {
+    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+    if (user.failedLoginAttempts >= LOCKOUT_THRESHOLD) {
+      user.lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60000);
+      user.failedLoginAttempts = 0;
+    }
+    await user.save();
+    throw new AppError("Invalid email or password.", 401);
+  }
+  
+  user.failedLoginAttempts = 0;
+  user.lockedUntil = null;
   user.lastLoginAt = new Date();
   
   await user.save();
@@ -142,7 +166,7 @@ export async function getMe(id) {
 
 export async function listUsers() {
   return User.find()
-    .select("name email role isActive lastLoginAt createdAt")
+    .select("name email role isActive lastLoginAt lockedUntil createdAt")
     .sort({ createdAt: -1 });
 }
 
@@ -188,6 +212,11 @@ export async function updateUser(id, input) {
   
   if (typeof input.isActive === "boolean") u.isActive = input.isActive;
   
+  if (input.unlock) {
+    u.failedLoginAttempts = 0;
+    u.lockedUntil = null;
+  }
+  
   if (input.name) u.name = String(input.name).trim();
   
   if (input.password) {
@@ -196,6 +225,8 @@ export async function updateUser(id, input) {
     const { hash, salt } = hashPassword(String(input.password));
     u.passwordHash = hash;
     u.passwordSalt = salt;
+    u.failedLoginAttempts = 0;
+    u.lockedUntil = null;
   }
   
   await u.save();

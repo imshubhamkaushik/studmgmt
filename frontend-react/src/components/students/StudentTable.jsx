@@ -120,10 +120,10 @@ export default function StudentTable({
               <td>{student.section}</td>
               <td>
                 <span
-                  className={`status-badge status-${student.status ?? "active"}`}
+                  className={`status-badge status-${student.status || "unknown"}`}
                 >
                   <span className="status-badge-dot" aria-hidden="true" />
-                  {student.status ?? "active"}
+                  {student.status || "unknown"}
                 </span>
               </td>
               <td>{formatDateOnly(student.dob)}</td>

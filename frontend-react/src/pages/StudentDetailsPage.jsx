@@ -22,20 +22,30 @@ export default function StudentDetailsPage() {
   const [tabError, setTabError] = useState("");
   useEffect(() => {
     if (!validId || tab === "overview") return;
-    setTabError("");
+    let cancelled = false;
     const run = async () => {
+      setTabError("");
       try {
-        if (tab === "attendance")
-          setAttendance((await getStudentAttendanceHistory(id)).data);
-        if (tab === "enrollments")
-          setEnrollments((await getEnrollments({ student: id })).data || []);
-        if (tab === "history")
-          setAudit((await getStudentAuditHistory(id)).data || []);
+        if (tab === "attendance") {
+          const result = (await getStudentAttendanceHistory(id)).data;
+          if (!cancelled) setAttendance(result);
+        }
+        if (tab === "enrollments") {
+          const result = (await getEnrollments({ student: id })).data || [];
+          if (!cancelled) setEnrollments(result);
+        }
+        if (tab === "history") {
+          const result = (await getStudentAuditHistory(id)).data || [];
+          if (!cancelled) setAudit(result);
+        }
       } catch (e) {
-        setTabError(getApiErrorMessage(e, "Unable to load this section."));
+        if (!cancelled) setTabError(getApiErrorMessage(e, "Unable to load this section."));
       }
     };
-    run();
+    Promise.resolve().then(run);
+    return () => {
+      cancelled = true;
+    };
   }, [id, tab, validId]);
   if (!validId)
     return (
@@ -63,7 +73,7 @@ export default function StudentDetailsPage() {
         message="The requested student record does not exist."
       />
     );
-  const status = student.status || "active";
+  const status = student.status || "unknown";
   return (
     <div className="student-details-page">
       <section className="details-card">
@@ -74,10 +84,7 @@ export default function StudentDetailsPage() {
               <span className="details-student-id">{student.studentId}</span>
               <h2>{student.name}</h2>
               <p>
-                <span className={`status-badge status-${status}`}>
-                  <span className="status-badge-dot" aria-hidden="true" />
-                  {status}
-                </span>{" "}
+                <span className={`status-badge status-${status}`}><span className="status-badge-dot" aria-hidden="true" />{status}</span>{" "}
                 Student record
               </p>
             </div>

@@ -159,3 +159,55 @@ test("attendance audit records persist the authenticated actor", async () => {
   assert.equal(String(audit.actor), String(admin._id));
   assert.equal(audit.actorEmail, admin.email);
 });
+
+test("account is locked after five consecutive failed login attempts", async () => {
+  await createUser({ name: "Lockout Target", email: "lockout@test.local", password: "StrongPassword123!", role: "staff" });
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const { response } = await login("lockout@test.local", "WrongPassword123!");
+    assert.equal(response.status, 401);
+  }
+
+  const lockedOutWithCorrectPassword = await login("lockout@test.local", "StrongPassword123!");
+  assert.equal(lockedOutWithCorrectPassword.response.status, 423);
+
+  const user = await User.findOne({ email: "lockout@test.local" });
+  assert.ok(user.lockedUntil > new Date());
+  assert.equal(user.failedLoginAttempts, 0);
+});
+
+test("a successful login resets any prior failed attempt count", async () => {
+  await createUser({ name: "Recovers", email: "recovers@test.local", password: "StrongPassword123!", role: "staff" });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { response } = await login("recovers@test.local", "WrongPassword123!");
+    assert.equal(response.status, 401);
+  }
+
+  const success = await login("recovers@test.local", "StrongPassword123!");
+  assert.equal(success.response.status, 200);
+
+  const user = await User.findOne({ email: "recovers@test.local" });
+  assert.equal(user.failedLoginAttempts, 0);
+  assert.equal(user.lockedUntil, null);
+});
+
+test("an admin can unlock a locked account without resetting the password", async () => {
+  const admin = await createUser({ name: "Unlock Admin", email: "unlock-admin@test.local", password: "StrongPassword123!", role: "admin" });
+  const target = await createUser({ name: "Locked User", email: "locked-user@test.local", password: "StrongPassword123!", role: "staff" });
+  await User.updateOne({ _id: target._id }, { $set: { lockedUntil: new Date(Date.now() + 15 * 60000), failedLoginAttempts: 0 } });
+
+  const stillLocked = await login("locked-user@test.local", "StrongPassword123!");
+  assert.equal(stillLocked.response.status, 423);
+
+  const adminLogin = await login("unlock-admin@test.local", "StrongPassword123!");
+  const unlockResponse = await request(`/api/v1/auth/users/${target._id}`, {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${adminLogin.body.data.accessToken}`, "content-type": "application/json" },
+    body: JSON.stringify({ unlock: true }),
+  });
+  assert.equal(unlockResponse.status, 200);
+
+  const nowUnlocked = await login("locked-user@test.local", "StrongPassword123!");
+  assert.equal(nowUnlocked.response.status, 200);
+});

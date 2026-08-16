@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
+import { Upload, Download, FileDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { exportStudents } from "../../api/students";
 import { useImportStudents } from "../../hooks/useStudents";
 import { getApiErrorMessage } from "../../utils/apiErrorMessage";
-import { useToast } from "../common/ToastProvider";
+import { useToast } from "../../hooks/useToast";
 
 const parseCsvLine = (line) => {
   const values = [];
@@ -43,14 +44,30 @@ const validateRows = (rows) =>
     return { ...row, rowNumber: index + 2, errors };
   });
 
+const TEMPLATE_CSV =
+  "Name,Class,Section,RollNo,DOB,Status\n" +
+  "Amelia Rao,10,A,12,2012-05-01,active\n";
+
+function downloadTemplate() {
+  const blob = new Blob([TEMPLATE_CSV], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "students-import-template.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function StudentImportExport({ filters }) {
   const inputRef = useRef(null);
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState([]);
   const importMutation = useImportStudents();
-  
+
   const { show } = useToast();
-  
+
   const handleExport = async () => {
     setError(null);
     try {
@@ -61,7 +78,7 @@ export default function StudentImportExport({ filters }) {
         status: filters.status || undefined,
       });
       const url = URL.createObjectURL(blob);
-      
+
       const link = document.createElement("a");
       link.href = url;
       link.download = `students-${new Date().toISOString().slice(0, 10)}.csv`;
@@ -69,41 +86,41 @@ export default function StudentImportExport({ filters }) {
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
-      
+
       show("Student CSV exported.");
     } catch (err) {
       setError(getApiErrorMessage(err, "Unable to export students."));
-      
+
       show(getApiErrorMessage(err, "Unable to export students."), "error");
     }
   };
-  
+
   const handleFile = async (event) => {
     const file = event.target.files?.[0];
-    
+
     event.target.value = "";
-    
+
     if (!file) return;
-    
+
     setError(null);
-    
+
     try {
       const text = await file.text();
-      
+
       const lines = text.split(/\r?\n/).filter((line) => line.trim());
-      
+
       if (lines.length < 2)
         throw new Error("CSV must contain a header and at least one student.");
-      
+
       const headers = parseCsvLine(lines[0]).map(normalizeHeader);
-      
+
       const required = ["name", "class", "section", "rollno", "dob"];
-      
+
       if (!required.every((field) => headers.includes(field)))
         throw new Error(
           "CSV must include Name, Class, Section, Roll No and Date of Birth columns.",
         );
-      
+
       const rows = lines.slice(1).map((line) => {
         const values = parseCsvLine(line);
         const record = Object.fromEntries(
@@ -123,18 +140,23 @@ export default function StudentImportExport({ filters }) {
       setError(err?.message || "Unable to read CSV.");
     }
   };
-  
+
   const handleImport = async () => {
     const invalid = preview.filter((row) => row.errors.length);
-    
+
     if (invalid.length) {
       setError(`${invalid.length} row(s) need to be fixed before import.`);
       return;
     }
-    
+
     try {
       const result = await importMutation.mutateAsync(
-        preview.map(({ rowNumber, errors, ...row }) => row),
+        preview.map((row) => {
+          const payload = { ...row };
+          delete payload.rowNumber;
+          delete payload.errors;
+          return payload;
+        }),
       );
       show(result.message || `${preview.length} students imported.`);
       setPreview([]);
@@ -144,6 +166,9 @@ export default function StudentImportExport({ filters }) {
       show(message, "error");
     }
   };
+
+  const invalidCount = preview.filter((r) => r.errors.length).length;
+
   return (
     <div className="import-export-actions">
       <button
@@ -151,6 +176,7 @@ export default function StudentImportExport({ filters }) {
         className="button button-secondary"
         onClick={handleExport}
       >
+        <Download size={14} aria-hidden="true" />
         Export CSV
       </button>
       <button
@@ -159,7 +185,17 @@ export default function StudentImportExport({ filters }) {
         disabled={importMutation.isPending}
         onClick={() => inputRef.current?.click()}
       >
+        <Upload size={14} aria-hidden="true" />
         Import CSV
+      </button>
+      <button
+        type="button"
+        className="button button-secondary"
+        onClick={downloadTemplate}
+        title="Download a sample CSV with the required columns"
+      >
+        <FileDown size={14} aria-hidden="true" />
+        Template
       </button>
       <input
         ref={inputRef}
@@ -173,10 +209,18 @@ export default function StudentImportExport({ filters }) {
           <div className="section-heading">
             <div>
               <strong>Import Preview</strong>
-              <p>
-                {preview.length} rows ·{" "}
-                {preview.filter((r) => r.errors.length).length} invalid
-              </p>
+              <div className="csv-summary">
+                <span className="status-badge status-active">
+                  <span className="status-badge-dot" aria-hidden="true" />
+                  {preview.length - invalidCount} ready
+                </span>
+                {invalidCount > 0 && (
+                  <span className="status-badge status-inactive">
+                    <span className="status-badge-dot" aria-hidden="true" />
+                    {invalidCount} need{invalidCount === 1 ? "s" : ""} fixing
+                  </span>
+                )}
+              </div>
             </div>
             <div>
               <button
@@ -213,14 +257,24 @@ export default function StudentImportExport({ filters }) {
               </thead>
               <tbody>
                 {preview.slice(0, 25).map((row) => (
-                  <tr key={row.rowNumber}>
+                  <tr key={row.rowNumber} className={row.errors.length ? "csv-row-invalid" : ""}>
                     <td>{row.rowNumber}</td>
-                    <td>{row.name}</td>
-                    <td>{row.class}</td>
-                    <td>{row.section}</td>
-                    <td>{row.rollNo}</td>
-                    <td>
-                      {row.errors.length ? row.errors.join("; ") : "Ready"}
+                    <td>{row.name || "—"}</td>
+                    <td>{row.class || "—"}</td>
+                    <td>{row.section || "—"}</td>
+                    <td>{row.rollNo || "—"}</td>
+                    <td className="csv-row-status">
+                      {row.errors.length ? (
+                        <span className="csv-row-issues">
+                          <AlertCircle size={12} style={{ marginRight: 4, verticalAlign: -2 }} aria-hidden="true" />
+                          {row.errors.join("; ")}
+                        </span>
+                      ) : (
+                        <span className="csv-row-ok">
+                          <CheckCircle2 size={13} aria-hidden="true" />
+                          Ready
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

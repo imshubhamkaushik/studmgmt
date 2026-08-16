@@ -66,7 +66,7 @@ jobs:
       - run: npm --prefix backend run test:integration
 
   frontend:
-    name: Frontend build and lint
+    name: Frontend lint, test, and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -77,4 +77,5 @@ jobs:
           cache-dependency-path: frontend-react/package-lock.json
       - run: npm --prefix frontend-react ci
       - run: npm --prefix frontend-react run lint
+      - run: npm --prefix frontend-react test
       - run: npm --prefix frontend-react run build

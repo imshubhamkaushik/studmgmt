@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 
 import studentRoutes from "./routes/student.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import auditRoutes from "./routes/audit.routes.js";
 import academicYearRoutes from "./routes/academic-year.routes.js";
 import classroomRoutes from "./routes/classroom.routes.js";
 import attendanceRoutes from "./routes/attendance.routes.js";
@@ -94,6 +95,7 @@ app.use("/api/v1/auth", authRoutes);
 // All business APIs require authentication. Authorization is enforced by route modules.
 app.use("/api/v1/students", authenticate, studentRoutes);
 app.use("/api/v1/dashboard", authenticate, dashboardRoutes);
+app.use("/api/v1/audit", authenticate, auditRoutes);
 app.use(
   "/api/v1/academic-years",
   authenticate,

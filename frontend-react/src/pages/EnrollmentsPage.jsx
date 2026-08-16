@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { ArrowLeftRight, History } from "lucide-react";
 import { getStudents } from "../api/students";
 import { getAcademicYears } from "../api/academicYears";
 import { getClassrooms } from "../api/classrooms";
+import EmptyState from "../components/common/EmptyState";
 import {
   getEnrollments,
   createEnrollment,
@@ -50,7 +52,7 @@ export default function EnrollmentsPage() {
     }
   };
   useEffect(() => {
-    load();
+    Promise.resolve().then(load);
   }, []);
 
   const filteredRooms = (yearId) =>
@@ -128,17 +130,7 @@ export default function EnrollmentsPage() {
 
   return (
     <main className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Academic placement</p>
-          <h1>Enrollments & Promotion</h1>
-          <p>
-            Assign students to academic classrooms and move them safely between
-            academic years.
-          </p>
-        </div>
-      </div>
-      {error && <p className="form-error">{error}</p>}
+      {error && <div className="inline-error">{error}</div>}
       {promotionMessage && <p className="import-success">{promotionMessage}</p>}
 
       <section className="card">
@@ -149,63 +141,82 @@ export default function EnrollmentsPage() {
           </div>
         </div>
         <form className="student-form" onSubmit={submit}>
-          <select
-            required
-            value={form.studentId}
-            onChange={(e) => setForm({ ...form, studentId: e.target.value })}
-          >
-            <option value="">Select active student</option>
-            {students
-              .filter((s) => s.status === "active" && !s.isDeleted)
-              .map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name} ({s.studentId})
+          <div>
+            <label className="form-field-label" htmlFor="en-student">Student</label>
+            <select
+              id="en-student"
+              required
+              value={form.studentId}
+              onChange={(e) => setForm({ ...form, studentId: e.target.value })}
+            >
+              <option value="">Select active student</option>
+              {students
+                .filter((s) => s.status === "active" && !s.isDeleted)
+                .map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name} ({s.studentId})
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="en-year">Academic Year</label>
+            <select
+              id="en-year"
+              required
+              value={form.academicYearId}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  academicYearId: e.target.value,
+                  classroomId: "",
+                })
+              }
+            >
+              <option value="">Select academic year</option>
+              {years.map((y) => (
+                <option key={y._id} value={y._id}>
+                  {y.name}
+                  {y.isActive ? " (Active)" : ""}
                 </option>
               ))}
-          </select>
-          <select
-            required
-            value={form.academicYearId}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                academicYearId: e.target.value,
-                classroomId: "",
-              })
-            }
-          >
-            <option value="">Select academic year</option>
-            {years.map((y) => (
-              <option key={y._id} value={y._id}>
-                {y.name}
-                {y.isActive ? " (Active)" : ""}
-              </option>
-            ))}
-          </select>
-          <select
-            required
-            value={form.classroomId}
-            onChange={(e) => setForm({ ...form, classroomId: e.target.value })}
-          >
-            <option value="">Select classroom</option>
-            {filteredRooms(form.academicYearId).map((r) => (
-              <option key={r._id} value={r._id}>
-                {r.className}-{r.section}
-                {r.capacity ? ` · ${r.studentCount || 0}/${r.capacity}` : ""}
-              </option>
-            ))}
-          </select>
-          <input
-            required
-            type="number"
-            min="1"
-            placeholder="Roll number"
-            value={form.rollNo}
-            onChange={(e) => setForm({ ...form, rollNo: e.target.value })}
-          />
-          <button type="submit" className="button primary" disabled={busy}>
-            {busy ? "Saving..." : "Enroll Student"}
-          </button>
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="en-classroom">Classroom</label>
+            <select
+              id="en-classroom"
+              required
+              value={form.classroomId}
+              onChange={(e) => setForm({ ...form, classroomId: e.target.value })}
+            >
+              <option value="">Select classroom</option>
+              {filteredRooms(form.academicYearId).map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.className}-{r.section}
+                  {r.capacity ? ` · ${r.studentCount || 0}/${r.capacity}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="en-roll">Roll Number</label>
+            <input
+              id="en-roll"
+              required
+              type="number"
+              min="1"
+              placeholder="e.g. 12"
+              value={form.rollNo}
+              onChange={(e) => setForm({ ...form, rollNo: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="en-submit">&nbsp;</label>
+            <button id="en-submit" type="submit" className="button button-primary" disabled={busy} style={{ width: "100%" }}>
+              {busy ? "Saving..." : "Enroll Student"}
+            </button>
+          </div>
         </form>
       </section>
 
@@ -220,69 +231,85 @@ export default function EnrollmentsPage() {
           </div>
         </div>
         <div className="student-form">
-          <select
-            value={sourceYear}
-            onChange={(e) => {
-              setSourceYear(e.target.value);
-              setSourceRoom("");
-              setSelected([]);
-            }}
-          >
-            <option value="">Source academic year</option>
-            {years.map((y) => (
-              <option key={y._id} value={y._id}>
-                {y.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={sourceRoom}
-            onChange={(e) => {
-              setSourceRoom(e.target.value);
-              setSelected([]);
-            }}
-            disabled={!sourceYear}
-          >
-            <option value="">All source classrooms</option>
-            {filteredRooms(sourceYear).map((r) => (
-              <option key={r._id} value={r._id}>
-                {r.className}-{r.section}
-              </option>
-            ))}
-          </select>
-          <select
-            value={destinationYear}
-            onChange={(e) => {
-              setDestinationYear(e.target.value);
-              setDestinationRoom("");
-            }}
-          >
-            <option value="">Destination academic year</option>
-            {years
-              .filter((y) => y._id !== sourceYear)
-              .map((y) => (
+          <div>
+            <label className="form-field-label" htmlFor="pr-source-year">Source Academic Year</label>
+            <select
+              id="pr-source-year"
+              value={sourceYear}
+              onChange={(e) => {
+                setSourceYear(e.target.value);
+                setSourceRoom("");
+                setSelected([]);
+              }}
+            >
+              <option value="">Source academic year</option>
+              {years.map((y) => (
                 <option key={y._id} value={y._id}>
                   {y.name}
                 </option>
               ))}
-          </select>
-          <select
-            value={destinationRoom}
-            onChange={(e) => setDestinationRoom(e.target.value)}
-            disabled={!destinationYear}
-          >
-            <option value="">Destination classroom</option>
-            {destinationRooms.map((r) => (
-              <option key={r._id} value={r._id}>
-                {r.className}-{r.section}
-                {r.capacity ? ` · ${r.studentCount || 0}/${r.capacity}` : ""}
-              </option>
-            ))}
-          </select>
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="pr-source-room">Source Classroom</label>
+            <select
+              id="pr-source-room"
+              value={sourceRoom}
+              onChange={(e) => {
+                setSourceRoom(e.target.value);
+                setSelected([]);
+              }}
+              disabled={!sourceYear}
+            >
+              <option value="">All source classrooms</option>
+              {filteredRooms(sourceYear).map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.className}-{r.section}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="pr-dest-year">Destination Academic Year</label>
+            <select
+              id="pr-dest-year"
+              value={destinationYear}
+              onChange={(e) => {
+                setDestinationYear(e.target.value);
+                setDestinationRoom("");
+              }}
+            >
+              <option value="">Destination academic year</option>
+              {years
+                .filter((y) => y._id !== sourceYear)
+                .map((y) => (
+                  <option key={y._id} value={y._id}>
+                    {y.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-field-label" htmlFor="pr-dest-room">Destination Classroom</label>
+            <select
+              id="pr-dest-room"
+              value={destinationRoom}
+              onChange={(e) => setDestinationRoom(e.target.value)}
+              disabled={!destinationYear}
+            >
+              <option value="">Destination classroom</option>
+              {destinationRooms.map((r) => (
+                <option key={r._id} value={r._id}>
+                  {r.className}-{r.section}
+                  {r.capacity ? ` · ${r.studentCount || 0}/${r.capacity}` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         {sourceRows.length > 0 && (
           <div className="table-wrapper">
-            <table>
+            <table className="student-table">
               <thead>
                 <tr>
                   <th>
@@ -369,34 +396,42 @@ export default function EnrollmentsPage() {
             </p>
           </div>
         </div>
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Academic Year</th>
-                <th>Classroom</th>
-                <th>Roll No.</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r._id}>
-                  <td>{r.student?.name || "—"}</td>
-                  <td>{r.academicYear?.name || "—"}</td>
-                  <td>
-                    {r.classroom
-                      ? `${r.classroom.className}-${r.classroom.section}`
-                      : "—"}
-                  </td>
-                  <td>{r.rollNo}</td>
-                  <td>{r.status}</td>
+        {rows.length === 0 ? (
+          <EmptyState
+            icon={History}
+            title="No enrollment history yet"
+            message="Enroll a student above to start building placement history."
+          />
+        ) : (
+          <div className="table-wrapper">
+            <table className="student-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Academic Year</th>
+                  <th>Classroom</th>
+                  <th>Roll No.</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r._id}>
+                    <td>{r.student?.name || "—"}</td>
+                    <td>{r.academicYear?.name || "—"}</td>
+                    <td>
+                      {r.classroom
+                        ? `${r.classroom.className}-${r.classroom.section}`
+                        : "—"}
+                    </td>
+                    <td>{r.rollNo}</td>
+                    <td>{r.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </main>
   );

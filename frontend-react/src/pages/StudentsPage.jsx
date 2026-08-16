@@ -17,7 +17,7 @@ import StudentsContent from "../components/students/StudentsContent";
 import DeleteStudentModal from "../components/students/DeleteStudentModal";
 import StudentImportExport from "../components/students/StudentImportExport";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
-import { useToast } from "../components/common/ToastProvider";
+import { useToast } from "../hooks/useToast";
 
 export default function StudentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();

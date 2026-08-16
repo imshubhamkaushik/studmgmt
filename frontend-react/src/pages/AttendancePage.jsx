@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { ClipboardList, SearchX } from "lucide-react";
 import { useMarkBulkAttendance } from "../hooks/useAttendance";
 import { getStudents, getStudentFilterOptions } from "../api/students";
 import { getAttendance } from "../api/attendance";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
+import EmptyState from "../components/common/EmptyState";
 
 const STATUSES = ["present", "absent", "late", "excused"];
 const today = () => new Date().toISOString().slice(0, 10);
@@ -10,14 +12,20 @@ const today = () => new Date().toISOString().slice(0, 10);
 export default function AttendancePage() {
   const [date, setDate] = useState(today());
   const [classOptions, setClassOptions] = useState([]);
-  const [sectionOptions, setSectionOptions] = useState([]);
+  const [fetchedSections, setFetchedSections] = useState([]);
   const [className, setClassName] = useState("");
   const [section, setSection] = useState("");
   const [students, setStudents] = useState([]);
   const [records, setRecords] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
   const mark = useMarkBulkAttendance();
+  // Sections are only meaningful once a class is picked; deriving this at
+  // render time (rather than resetting state to [] inside the effect below
+  // whenever className is cleared) keeps the effect free of any
+  // synchronous setState call.
+  const sectionOptions = className ? fetchedSections : [];
 
   // Load the full class list once, unfiltered.
   useEffect(() => {
@@ -31,16 +39,15 @@ export default function AttendancePage() {
   // section for every class.
   useEffect(() => {
     if (!className) {
-      setSectionOptions([]);
       return;
     }
     let cancelled = false;
     getStudentFilterOptions({ class: className })
       .then((r) => {
-        if (!cancelled) setSectionOptions(r.data.sections);
+        if (!cancelled) setFetchedSections(r.data.sections);
       })
       .catch(() => {
-        if (!cancelled) setSectionOptions([]);
+        if (!cancelled) setFetchedSections([]);
       });
     return () => {
       cancelled = true;
@@ -51,6 +58,7 @@ export default function AttendancePage() {
     if (!className || !section) return;
     setLoading(true);
     setLoadError("");
+    setHasSearched(true);
     try {
       const result = await getStudents({
         class: className,
@@ -159,6 +167,23 @@ export default function AttendancePage() {
           <strong>Unable to load attendance</strong>
           <p>{loadError}</p>
         </div>
+      )}
+      {!loading && students.length === 0 && !loadError && (
+        <section className="dashboard-card">
+          {hasSearched ? (
+            <EmptyState
+              icon={SearchX}
+              title="No active students found"
+              message="There are no active students in this class and section. Try a different combination above."
+            />
+          ) : (
+            <EmptyState
+              icon={ClipboardList}
+              title="Load a class to mark attendance"
+              message="Pick a date, class, and section above, then click Load Students to get started."
+            />
+          )}
+        </section>
       )}
       {students.length > 0 && (
         <section className="dashboard-card attendance-list">

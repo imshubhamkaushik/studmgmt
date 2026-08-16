@@ -40,3 +40,11 @@ export const getEntityAudit = (entityType, entityId) =>
     .sort({ createdAt: -1 })
     .limit(100)
     .lean();
+
+// Powers the dashboard "Recent Activity" feed: the most recent audit
+// entries across every entity type, not scoped to a single record.
+export const getRecentActivity = (limit = 15) =>
+  AuditLog.find()
+    .sort({ createdAt: -1 })
+    .limit(Math.min(Number(limit) || 15, 50))
+    .lean();

@@ -28,14 +28,7 @@ export default function StudentsEmptyState({
     onPageChange,
   });
 
-  return (
-    <EmptyState
-      title={title}
-      message={message}
-      action={action}
-      icon={search ? SearchX : Users}
-    />
-  );
+  return <EmptyState title={title} message={message} action={action} icon={search ? SearchX : Users} />;
 }
 
 function getEmptyTitle({ hasStudents, search }) {

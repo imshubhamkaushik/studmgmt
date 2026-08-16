@@ -1,71 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Menu, Search, LogOut, ChevronDown } from "lucide-react";
-import { useAuth } from "../../auth/AuthProvider";
+import { useAuth } from "../../auth/useAuth";
 import Avatar from "../common/Avatar";
 
 const getPageTitle = (pathname) => {
   const pages = [
-    [
-      "/dashboard",
-      "Dashboard",
-      "Overview of your student records and activity.",
-    ],
+    ["/dashboard", "Dashboard", "Overview of your student records and activity."],
     ["/students/new", "Add Student", "Create a new student record."],
     ["/students", "Students", "Manage, search, and organize student records."],
-    [
-      "/attendance",
-      "Attendance",
-      "Load a class, mark attendance, and save the day in one place.",
-    ],
-    [
-      "/academic-years",
-      "Academic Years",
-      "Create and manage academic periods.",
-    ],
-    [
-      "/classrooms",
-      "Classrooms",
-      "Manage classes, sections, capacity, and academic years.",
-    ],
-    [
-      "/enrollments",
-      "Enrollments",
-      "Assign students to classrooms and review placement history.",
-    ],
-    [
-      "/promotions",
-      "Promotions",
-      "Move students safely between academic years.",
-    ],
-    [
-      "/users",
-      "Users & Roles",
-      "Manage access for administrators, staff, and teachers.",
-    ],
-    [
-      "/teacher-assignments",
-      "Teacher Assignments",
-      "Assign teachers to the classrooms they manage.",
-    ],
+    ["/attendance", "Attendance", "Manage the attendance of students in one place."],
+    ["/academic-years", "Academic Years", "Create and manage academic periods."],
+    ["/classrooms", "Classrooms", "Manage classes, sections, capacity, and academic years."],
+    ["/enrollments", "Enrollments", "Assign students to classrooms and review enrollment history."],
+    ["/promotions", "Promotions", "Move selected active enrollments to a new academic year and classroom while preserving enrollment history."],
+    ["/teacher-assignments", "Teacher Assignments", "Assign teachers to the classrooms they manage."],
+    ["/users", "Users & Roles", "Manage access for administrators, staff, and teachers."],
   ];
 
   if (pathname.endsWith("/edit"))
-    return {
-      title: "Edit Student",
-      description: "Update an existing student record.",
-    };
+    return { title: "Edit Student", description: "Update an existing student record." };
   if (pathname.startsWith("/students/") && pathname !== "/students/new")
-    return {
-      title: "Student Details",
-      description: "View student information and record history.",
-    };
+    return { title: "Student Details", description: "View student information and record history." };
 
   const match = pages.find(([path]) => pathname === path);
   return match
     ? { title: match[1], description: match[2] }
     : { title: "StudentHub", description: "Student management workspace." };
 };
+
+// The header search only jumps to a student record, so it only belongs on
+// pages where that's a genuinely useful shortcut. The Students page already
+// has its own, more capable search (by name/class/section) in its toolbar,
+// so showing this one there too would just be redundant noise — and on
+// admin pages like Users & Roles or Academic Years, "search students" has
+// nothing to do with what's on screen.
+const SEARCH_VISIBLE_ROUTES = new Set(["/dashboard", "/attendance"]);
 
 export default function Header({ onMenuClick }) {
   const location = useLocation();
@@ -75,11 +45,11 @@ export default function Header({ onMenuClick }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const menuRef = useRef(null);
+  const showSearch = SEARCH_VISIBLE_ROUTES.has(location.pathname);
 
   useEffect(() => {
     const onClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target))
-        setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(event.target)) setMenuOpen(false);
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
@@ -88,40 +58,33 @@ export default function Header({ onMenuClick }) {
   const submitSearch = (event) => {
     event.preventDefault();
     const query = searchValue.trim();
-    navigate(
-      query ? `/students?search=${encodeURIComponent(query)}` : "/students",
-    );
+    navigate(query ? `/students?search=${encodeURIComponent(query)}` : "/students");
   };
 
   return (
     <header className="app-header">
-      <button
-        type="button"
-        className="header-menu-button"
-        onClick={onMenuClick}
-        aria-label="Open menu"
-      >
+      <button type="button" className="header-menu-button" onClick={onMenuClick} aria-label="Open menu">
         <Menu size={19} />
       </button>
 
-      <div>
+      <div style={showSearch ? undefined : { flex: 1, minWidth: 0 }}>
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
 
-      <form className="header-search" role="search" onSubmit={submitSearch}>
-        <Search size={16} aria-hidden="true" />
-        <label htmlFor="header-search-input" className="sr-only">
-          Search students
-        </label>
-        <input
-          id="header-search-input"
-          type="search"
-          placeholder="Search students by name or ID..."
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-        />
-      </form>
+      {showSearch && (
+        <form className="header-search" role="search" onSubmit={submitSearch}>
+          <Search size={16} aria-hidden="true" />
+          <label htmlFor="header-search-input" className="sr-only">Search students</label>
+          <input
+            id="header-search-input"
+            type="search"
+            placeholder="Search students by name or ID..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+        </form>
+      )}
 
       <div className="header-actions">
         <div className="header-user" ref={menuRef}>
@@ -137,11 +100,7 @@ export default function Header({ onMenuClick }) {
               <strong>{user?.name || "User"}</strong>
               <span>{user?.role || "user"}</span>
             </span>
-            <ChevronDown
-              size={15}
-              className="header-user-caret"
-              aria-hidden="true"
-            />
+            <ChevronDown size={15} className="header-user-caret" aria-hidden="true" />
           </button>
 
           {menuOpen && (
