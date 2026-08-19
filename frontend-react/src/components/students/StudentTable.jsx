@@ -1,6 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Pencil, Eye, Archive as ArchiveIcon, RotateCcw } from "lucide-react";
 import { formatDate, formatDateOnly } from "../../utils/date";
 import Avatar from "../common/Avatar";
+import ActionMenu from "../common/ActionMenu";
 
 const SORTABLE_COLUMNS = [
   { field: "studentId", label: "Student ID" },
@@ -56,6 +58,7 @@ export default function StudentTable({
   sortOrder,
   onSortChange,
 }) {
+  const navigate = useNavigate();
   const allSelected =
     students.length > 0 &&
     students.every((student) => selectedIds.includes(student._id));
@@ -130,37 +133,42 @@ export default function StudentTable({
               <td>{formatDate(student.createdAt)}</td>
               <td>
                 <div className="table-actions">
-                  <Link
-                    to={`/students/${student._id}`}
-                    className="button button-small button-secondary"
-                  >
-                    View
-                  </Link>
                   {!showArchived && (
                     <Link
                       to={`/students/${student._id}/edit`}
-                      className="button button-small button-secondary"
+                      className="action-menu-trigger"
+                      aria-label={`Edit ${student.name}`}
+                      title="Edit"
                     >
-                      Edit
+                      <Pencil size={15} aria-hidden="true" />
                     </Link>
                   )}
-                  {showArchived ? (
-                    <button
-                      type="button"
-                      className="button button-small button-primary"
-                      onClick={() => onRestore?.(student)}
-                    >
-                      Restore
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="button button-small button-danger"
-                      onClick={() => onDelete(student)}
-                    >
-                      Archive
-                    </button>
-                  )}
+                  <ActionMenu
+                    label={`More actions for ${student.name}`}
+                    items={[
+                      {
+                        key: "view",
+                        label: "View Details",
+                        icon: Eye,
+                        onClick: () => navigate(`/students/${student._id}`),
+                      },
+                      { key: "divider", divider: true },
+                      showArchived
+                        ? {
+                            key: "restore",
+                            label: "Restore",
+                            icon: RotateCcw,
+                            onClick: () => onRestore?.(student),
+                          }
+                        : {
+                            key: "archive",
+                            label: "Archive",
+                            icon: ArchiveIcon,
+                            danger: true,
+                            onClick: () => onDelete(student),
+                          },
+                    ]}
+                  />
                 </div>
               </td>
             </tr>

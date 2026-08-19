@@ -13,7 +13,7 @@ export const markBulkAttendance = async (
   requestId = null,
 ) => {
   const ids = records.map((record) => record.studentId);
-  
+
   const students = await Student.find({
     _id: { $in: ids },
     class: className,
@@ -23,20 +23,20 @@ export const markBulkAttendance = async (
   })
     .select("_id")
     .lean();
-  
+
   if (students.length !== ids.length)
     throw new AppError(
       "All attendance records must belong to active, non-archived students in the selected class and section.",
       400,
     );
-  
+
   const existing = await Attendance.find({
     student: { $in: ids },
     date,
   }).lean();
-  
+
   const existingIds = new Set(existing.map((item) => String(item.student)));
-  
+
   const operations = records.map((record) => ({
     updateOne: {
       filter: { student: record.studentId, date },
@@ -47,9 +47,9 @@ export const markBulkAttendance = async (
       upsert: true,
     },
   }));
-  
+
   const result = await Attendance.bulkWrite(operations, { ordered: true });
-  
+
   await writeAudit({
     entityType: "attendance",
     entityId: `${className}-${section}-${dateOnly(date)}`,
@@ -64,7 +64,7 @@ export const markBulkAttendance = async (
     },
     requestId,
   });
-  
+
   return {
     date: dateOnly(date),
     class: className,
@@ -76,29 +76,61 @@ export const markBulkAttendance = async (
   };
 };
 
+function buildDateFilter(query) {
+  const entries = [];
+
+  if (query.from) {
+    entries.push(["$gte", parseAttendanceDate(query.from)]);
+  }
+
+  if (query.to) {
+    entries.push(["$lte", parseAttendanceDate(query.to)]);
+  }
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return Object.fromEntries(entries);
+}
+
 export const getAttendance = async (query) => {
-  const filter = {};
-  
-  if (query.date) filter.date = parseAttendanceDate(query.date);
-  
+  let status;
+  let studentId;
+
   if (query.status) {
-    const status = String(query.status).toLowerCase();
-    if (!ATTENDANCE_STATUSES.includes(status))
+    status = String(query.status).toLowerCase();
+
+    if (!ATTENDANCE_STATUSES.includes(status)) {
       throw new AppError("Invalid attendance status.", 400);
-    filter.status = status;
+    }
   }
-  
+
   if (query.studentId) {
-    if (!mongoose.isValidObjectId(query.studentId))
+    if (!mongoose.isValidObjectId(query.studentId)) {
       throw new AppError("Invalid studentId.", 400);
-    filter.student = query.studentId;
+    }
+
+    studentId = query.studentId;
   }
-  
+
+  const filter = {
+    ...(query.date && {
+      date: parseAttendanceDate(query.date),
+    }),
+    ...(status && {
+      status,
+    }),
+    ...(studentId && {
+      student: studentId,
+    }),
+  };
+
   const rows = await Attendance.find(filter)
     .sort({ date: -1, _id: -1 })
     .populate("student", "studentId name rollNo class section status isDeleted")
     .lean();
-  
+
   return rows.filter(
     (row) =>
       row.student &&
@@ -109,24 +141,14 @@ export const getAttendance = async (query) => {
 };
 
 export const getAttendanceSummary = async (query) => {
-  const filter = {};
-  
-  if (query.from)
-    filter.date = {
-      ...(filter.date || {}),
-      $gte: parseAttendanceDate(query.from),
-    };
-  
-  if (query.to)
-    filter.date = {
-      ...(filter.date || {}),
-      $lte: parseAttendanceDate(query.to),
-    };
-  
+  const dateFilter = buildDateFilter(query);
+
+  const filter = Object.fromEntries(dateFilter ? [["date", dateFilter]] : []);
+
   const rows = await Attendance.find(filter)
     .populate("student", "class section isDeleted")
     .lean();
-  
+
   const filtered = rows.filter(
     (row) =>
       row.student &&
@@ -134,19 +156,19 @@ export const getAttendanceSummary = async (query) => {
       (!query.class || row.student.class === query.class) &&
       (!query.section || row.student.section === query.section),
   );
-  
+
   const counts = Object.fromEntries(
     ATTENDANCE_STATUSES.map((status) => [status, 0]),
   );
-  
+
   filtered.forEach((row) => {
     counts[row.status] += 1;
   });
-  
+
   const total = filtered.length;
-  
+
   const attended = counts.present + counts.late + counts.excused;
-  
+
   return {
     total,
     ...counts,
@@ -157,44 +179,39 @@ export const getAttendanceSummary = async (query) => {
 };
 
 export const getStudentAttendanceHistory = async (studentId, query) => {
-  if (!mongoose.isValidObjectId(studentId))
+  if (!mongoose.isValidObjectId(studentId)) {
     throw new AppError("Invalid student ID.", 400);
-  
+  }
+
   const student = await Student.findOne({
     _id: studentId,
     isDeleted: { $ne: true },
   }).lean();
-  
-  if (!student) throw new AppError("Student not found.", 404);
-  
-  const filter = { student: studentId };
-  
-  if (query.from)
-    filter.date = {
-      ...(filter.date || {}),
-      $gte: parseAttendanceDate(query.from),
-    };
-  
-  if (query.to)
-    filter.date = {
-      ...(filter.date || {}),
-      $lte: parseAttendanceDate(query.to),
-    };
-  
+
+  if (!student) {
+    throw new AppError("Student not found.", 404);
+  }
+
+  const dateFilter = buildDateFilter(query);
+
+  const filter = Object.fromEntries([
+    ["student", studentId],
+    ...(dateFilter ? [["date", dateFilter]] : []),
+  ]);
+
   const records = await Attendance.find(filter).sort({ date: -1 }).lean();
-  
+
   const counts = Object.fromEntries(
     ATTENDANCE_STATUSES.map((status) => [status, 0]),
   );
-  
+
   records.forEach((record) => {
     counts[record.status] += 1;
   });
-  
+
   const total = records.length;
-  
   const attended = counts.present + counts.late + counts.excused;
-  
+
   return {
     student: {
       _id: student._id,

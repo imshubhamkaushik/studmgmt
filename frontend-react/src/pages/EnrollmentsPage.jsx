@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeftRight, History } from "lucide-react";
+import { ArrowLeftRight, History, Search } from "lucide-react";
 import { getStudents } from "../api/students";
 import { getAcademicYears } from "../api/academicYears";
 import { getClassrooms } from "../api/classrooms";
 import EmptyState from "../components/common/EmptyState";
-import {
-  getEnrollments,
-  createEnrollment,
-  promoteStudents,
-} from "../api/enrollments";
+import { getEnrollments, createEnrollment } from "../api/enrollments";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
 
 const emptyForm = {
@@ -25,14 +21,18 @@ export default function EnrollmentsPage() {
   const [rows, setRows] = useState([]);
   const [error, setError] = useState("");
   const [form, setForm] = useState(emptyForm);
-  const [selected, setSelected] = useState([]);
-  const [sourceYear, setSourceYear] = useState("");
-  const [sourceRoom, setSourceRoom] = useState("");
-  const [destinationYear, setDestinationYear] = useState("");
-  const [destinationRoom, setDestinationRoom] = useState("");
-  const [promotionRolls, setPromotionRolls] = useState({});
   const [busy, setBusy] = useState(false);
-  const [promotionMessage, setPromotionMessage] = useState("");
+  const [historySearch, setHistorySearch] = useState("");
+
+  const filteredHistoryRows = useMemo(() => {
+    const q = historySearch.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) =>
+      [r.student?.name, r.academicYear?.name, r.classroom?.className, r.status]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q)),
+    );
+  }, [rows, historySearch]);
 
   const load = async () => {
     setError("");
@@ -59,21 +59,6 @@ export default function EnrollmentsPage() {
     rooms.filter(
       (r) => String(r.academicYear?._id || r.academicYear) === String(yearId),
     );
-  const enrollmentRows = useMemo(
-    () => rows.filter((r) => r.status === "active"),
-    [rows],
-  );
-  const sourceRows = useMemo(
-    () =>
-      enrollmentRows.filter(
-        (r) =>
-          String(r.academicYear?._id || r.academicYear) === sourceYear &&
-          (!sourceRoom ||
-            String(r.classroom?._id || r.classroom) === sourceRoom),
-      ),
-    [enrollmentRows, sourceYear, sourceRoom],
-  );
-  const destinationRooms = filteredRooms(destinationYear);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -90,48 +75,30 @@ export default function EnrollmentsPage() {
     }
   };
 
-  const toggle = (id) =>
-    setSelected((current) =>
-      current.includes(id) ? current.filter((x) => x !== id) : [...current, id],
-    );
-  const toggleAll = () =>
-    setSelected(
-      selected.length === sourceRows.length
-        ? []
-        : sourceRows.map((r) => r.student?._id || r.student),
-    );
-
-  const promote = async () => {
-    if (!selected.length || !sourceYear || !destinationYear || !destinationRoom)
-      return;
-    setBusy(true);
-    setError("");
-    setPromotionMessage("");
-    try {
-      const result = await promoteStudents({
-        studentIds: selected,
-        fromAcademicYearId: sourceYear,
-        toAcademicYearId: destinationYear,
-        toClassroomId: destinationRoom,
-        rollNumbers: promotionRolls,
-      });
-      setPromotionMessage(
-        `${result.data?.length || selected.length} student(s) promoted successfully.`,
-      );
-      setSelected([]);
-      setPromotionRolls({});
-      await load();
-    } catch (e) {
-      setError(getApiErrorMessage(e, "Promotion failed."));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
-    <main className="page">
+    <main className="page page-narrow">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Academic placement</p>
+          <h1>
+            <ArrowLeftRight
+              size={22}
+              style={{
+                marginRight: 10,
+                verticalAlign: -3,
+                color: "var(--brand)",
+              }}
+              aria-hidden="true"
+            />
+            Enrollments
+          </h1>
+          <p>
+            Assign students to academic classrooms. To move students between
+            academic years, use the Promotions page.
+          </p>
+        </div>
+      </div>
       {error && <div className="inline-error">{error}</div>}
-      {promotionMessage && <p className="import-success">{promotionMessage}</p>}
 
       <section className="card">
         <div className="section-heading">
@@ -142,7 +109,9 @@ export default function EnrollmentsPage() {
         </div>
         <form className="student-form" onSubmit={submit}>
           <div>
-            <label className="form-field-label" htmlFor="en-student">Student</label>
+            <label className="form-field-label" htmlFor="en-student">
+              Student
+            </label>
             <select
               id="en-student"
               required
@@ -160,7 +129,9 @@ export default function EnrollmentsPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="en-year">Academic Year</label>
+            <label className="form-field-label" htmlFor="en-year">
+              Academic Year
+            </label>
             <select
               id="en-year"
               required
@@ -183,12 +154,16 @@ export default function EnrollmentsPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="en-classroom">Classroom</label>
+            <label className="form-field-label" htmlFor="en-classroom">
+              Classroom
+            </label>
             <select
               id="en-classroom"
               required
               value={form.classroomId}
-              onChange={(e) => setForm({ ...form, classroomId: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, classroomId: e.target.value })
+              }
             >
               <option value="">Select classroom</option>
               {filteredRooms(form.academicYearId).map((r) => (
@@ -200,7 +175,9 @@ export default function EnrollmentsPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="en-roll">Roll Number</label>
+            <label className="form-field-label" htmlFor="en-roll">
+              Roll Number
+            </label>
             <input
               id="en-roll"
               required
@@ -211,179 +188,16 @@ export default function EnrollmentsPage() {
               onChange={(e) => setForm({ ...form, rollNo: e.target.value })}
             />
           </div>
-          <div>
-            <label className="form-field-label" htmlFor="en-submit">&nbsp;</label>
-            <button id="en-submit" type="submit" className="button button-primary" disabled={busy} style={{ width: "100%" }}>
+          <div className="form-submit-field">
+            <button
+              type="submit"
+              className="button button-primary"
+              disabled={busy}
+            >
               {busy ? "Saving..." : "Enroll Student"}
             </button>
           </div>
         </form>
-      </section>
-
-      <section className="card">
-        <div className="section-heading">
-          <div>
-            <h2>Promote students</h2>
-            <p>
-              Select active enrollments from a source year and preview their
-              destination roll numbers.
-            </p>
-          </div>
-        </div>
-        <div className="student-form">
-          <div>
-            <label className="form-field-label" htmlFor="pr-source-year">Source Academic Year</label>
-            <select
-              id="pr-source-year"
-              value={sourceYear}
-              onChange={(e) => {
-                setSourceYear(e.target.value);
-                setSourceRoom("");
-                setSelected([]);
-              }}
-            >
-              <option value="">Source academic year</option>
-              {years.map((y) => (
-                <option key={y._id} value={y._id}>
-                  {y.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="form-field-label" htmlFor="pr-source-room">Source Classroom</label>
-            <select
-              id="pr-source-room"
-              value={sourceRoom}
-              onChange={(e) => {
-                setSourceRoom(e.target.value);
-                setSelected([]);
-              }}
-              disabled={!sourceYear}
-            >
-              <option value="">All source classrooms</option>
-              {filteredRooms(sourceYear).map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.className}-{r.section}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="form-field-label" htmlFor="pr-dest-year">Destination Academic Year</label>
-            <select
-              id="pr-dest-year"
-              value={destinationYear}
-              onChange={(e) => {
-                setDestinationYear(e.target.value);
-                setDestinationRoom("");
-              }}
-            >
-              <option value="">Destination academic year</option>
-              {years
-                .filter((y) => y._id !== sourceYear)
-                .map((y) => (
-                  <option key={y._id} value={y._id}>
-                    {y.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-          <div>
-            <label className="form-field-label" htmlFor="pr-dest-room">Destination Classroom</label>
-            <select
-              id="pr-dest-room"
-              value={destinationRoom}
-              onChange={(e) => setDestinationRoom(e.target.value)}
-              disabled={!destinationYear}
-            >
-              <option value="">Destination classroom</option>
-              {destinationRooms.map((r) => (
-                <option key={r._id} value={r._id}>
-                  {r.className}-{r.section}
-                  {r.capacity ? ` · ${r.studentCount || 0}/${r.capacity}` : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        {sourceRows.length > 0 && (
-          <div className="table-wrapper">
-            <table className="student-table">
-              <thead>
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      checked={selected.length === sourceRows.length}
-                      onChange={toggleAll}
-                    />
-                  </th>
-                  <th>Student</th>
-                  <th>Source</th>
-                  <th>Destination Roll</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sourceRows.map((r) => {
-                  const id = r.student?._id || r.student;
-                  const checked = selected.includes(id);
-                  return (
-                    <tr key={r._id}>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggle(id)}
-                        />
-                      </td>
-                      <td>
-                        {r.student?.name || "—"}{" "}
-                        <small>{r.student?.studentId || ""}</small>
-                      </td>
-                      <td>
-                        {r.classroom
-                          ? `${r.classroom.className}-${r.classroom.section}`
-                          : "—"}
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min="1"
-                          disabled={!checked}
-                          value={promotionRolls[id] || ""}
-                          placeholder="Auto"
-                          onChange={(e) =>
-                            setPromotionRolls((x) => ({
-                              ...x,
-                              [id]: e.target.value,
-                            }))
-                          }
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-        <div className="section-actions">
-          <span>{selected.length} selected</span>
-          <button
-            className="button button-primary"
-            disabled={
-              busy ||
-              !selected.length ||
-              !sourceYear ||
-              !destinationYear ||
-              !destinationRoom
-            }
-            onClick={promote}
-          >
-            {busy ? "Promoting..." : "Promote Selected"}
-          </button>
-        </div>
       </section>
 
       <section className="card">
@@ -395,12 +209,33 @@ export default function EnrollmentsPage() {
               student record.
             </p>
           </div>
+          {rows.length > 6 && (
+            <div className="search-field" style={{ maxWidth: 240 }}>
+              <label htmlFor="history-search" className="sr-only">
+                Search enrollment history
+              </label>
+              <Search size={15} aria-hidden="true" />
+              <input
+                id="history-search"
+                type="search"
+                placeholder="Search student, year, class..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+              />
+            </div>
+          )}
         </div>
         {rows.length === 0 ? (
           <EmptyState
             icon={History}
             title="No enrollment history yet"
             message="Enroll a student above to start building placement history."
+          />
+        ) : filteredHistoryRows.length === 0 ? (
+          <EmptyState
+            icon={Search}
+            title="No matching enrollments"
+            message={`Nothing matches "${historySearch}".`}
           />
         ) : (
           <div className="table-wrapper">
@@ -415,7 +250,7 @@ export default function EnrollmentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {filteredHistoryRows.map((r) => (
                   <tr key={r._id}>
                     <td>{r.student?.name || "—"}</td>
                     <td>{r.academicYear?.name || "—"}</td>

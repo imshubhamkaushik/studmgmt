@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { ClipboardList, SearchX } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ClipboardList, SearchX, Search } from "lucide-react";
 import { useMarkBulkAttendance } from "../hooks/useAttendance";
 import { getStudents, getStudentFilterOptions } from "../api/students";
 import { getAttendance } from "../api/attendance";
@@ -20,12 +20,24 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [rowFilter, setRowFilter] = useState("");
   const mark = useMarkBulkAttendance();
   // Sections are only meaningful once a class is picked; deriving this at
   // render time (rather than resetting state to [] inside the effect below
   // whenever className is cleared) keeps the effect free of any
   // synchronous setState call.
   const sectionOptions = className ? fetchedSections : [];
+
+  const visibleStudents = useMemo(() => {
+    const q = rowFilter.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        String(s.rollNo).includes(q) ||
+        s.studentId.toLowerCase().includes(q),
+    );
+  }, [students, rowFilter]);
 
   // Load the full class list once, unfiltered.
   useEffect(() => {
@@ -59,6 +71,7 @@ export default function AttendancePage() {
     setLoading(true);
     setLoadError("");
     setHasSearched(true);
+    setRowFilter("");
     try {
       const result = await getStudents({
         class: className,
@@ -193,9 +206,27 @@ export default function AttendancePage() {
                 {className}-{section}
               </h2>
               <p>
-                {students.length} active students · {date}
+                {rowFilter
+                  ? `${visibleStudents.length} of ${students.length}`
+                  : students.length}{" "}
+                active students · {date}
               </p>
             </div>
+            {students.length > 8 && (
+              <div className="search-field" style={{ maxWidth: 220 }}>
+                <label htmlFor="attendance-row-search" className="sr-only">
+                  Filter students
+                </label>
+                <Search size={15} aria-hidden="true" />
+                <input
+                  id="attendance-row-search"
+                  type="search"
+                  placeholder="Find a student..."
+                  value={rowFilter}
+                  onChange={(e) => setRowFilter(e.target.value)}
+                />
+              </div>
+            )}
             <div className="attendance-bulk-actions">
               <button
                 type="button"
@@ -213,6 +244,7 @@ export default function AttendancePage() {
               </button>
               <button
                 className="button button-primary"
+                type="button"
                 onClick={save}
                 disabled={mark.isPending}
               >
@@ -232,31 +264,43 @@ export default function AttendancePage() {
             <p className="import-success">Attendance saved successfully.</p>
           )}
           <div className="attendance-table">
-            {students.map((student) => (
-              <div className="attendance-row" key={student._id}>
-                <div>
-                  <strong>
-                    {student.rollNo}. {student.name}
-                  </strong>
-                  <span>{student.studentId}</span>
+            {visibleStudents.length === 0 ? (
+              <p
+                style={{
+                  padding: "20px 4px",
+                  color: "var(--muted)",
+                  fontSize: 13.5,
+                }}
+              >
+                No students match "{rowFilter}".
+              </p>
+            ) : (
+              visibleStudents.map((student) => (
+                <div className="attendance-row" key={student._id}>
+                  <div>
+                    <strong>
+                      {student.rollNo}. {student.name}
+                    </strong>
+                    <span>{student.studentId}</span>
+                  </div>
+                  <select
+                    value={records[student._id] || "present"}
+                    onChange={(e) =>
+                      setRecords((current) => ({
+                        ...current,
+                        [student._id]: e.target.value,
+                      }))
+                    }
+                  >
+                    {STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <select
-                  value={records[student._id] || "present"}
-                  onChange={(e) =>
-                    setRecords((current) => ({
-                      ...current,
-                      [student._id]: e.target.value,
-                    }))
-                  }
-                >
-                  {STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
       )}

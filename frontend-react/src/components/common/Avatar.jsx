@@ -10,8 +10,8 @@ const PALETTE = [
 function hashString(value) {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i);
-    hash |= 0;
+    hash = (hash << 5) - hash + value.codePointAt(i);
+    hash = Math.trunc(hash);
   }
   return Math.abs(hash);
 }

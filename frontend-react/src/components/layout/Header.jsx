@@ -1,21 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Menu, Search, LogOut, ChevronDown } from "lucide-react";
-import { useAuth } from "../../auth/useAuth";
-import Avatar from "../common/Avatar";
+import { useLocation } from "react-router-dom";
+import { Menu, Search } from "lucide-react";
 
 const getPageTitle = (pathname) => {
   const pages = [
     ["/dashboard", "Dashboard", "Overview of your student records and activity."],
     ["/students/new", "Add Student", "Create a new student record."],
     ["/students", "Students", "Manage, search, and organize student records."],
-    ["/attendance", "Attendance", "Manage the attendance of students in one place."],
+    ["/attendance", "Attendance", "Load a class, mark attendance, and save the day in one place."],
     ["/academic-years", "Academic Years", "Create and manage academic periods."],
     ["/classrooms", "Classrooms", "Manage classes, sections, capacity, and academic years."],
-    ["/enrollments", "Enrollments", "Assign students to classrooms and review enrollment history."],
-    ["/promotions", "Promotions", "Move selected active enrollments to a new academic year and classroom while preserving enrollment history."],
-    ["/teacher-assignments", "Teacher Assignments", "Assign teachers to the classrooms they manage."],
+    ["/enrollments", "Enrollments", "Assign students to classrooms and review placement history."],
+    ["/promotions", "Promotions", "Move students safely between academic years."],
     ["/users", "Users & Roles", "Manage access for administrators, staff, and teachers."],
+    ["/teacher-assignments", "Teacher Assignments", "Assign teachers to the classrooms they manage."],
   ];
 
   if (pathname.endsWith("/edit"))
@@ -29,37 +26,11 @@ const getPageTitle = (pathname) => {
     : { title: "StudentHub", description: "Student management workspace." };
 };
 
-// The header search only jumps to a student record, so it only belongs on
-// pages where that's a genuinely useful shortcut. The Students page already
-// has its own, more capable search (by name/class/section) in its toolbar,
-// so showing this one there too would just be redundant noise — and on
-// admin pages like Users & Roles or Academic Years, "search students" has
-// nothing to do with what's on screen.
-const SEARCH_VISIBLE_ROUTES = new Set(["/dashboard", "/attendance"]);
+const isMac = typeof navigator !== "undefined" && /Mac/i.test(navigator.platform || navigator.userAgent);
 
-export default function Header({ onMenuClick }) {
+export default function Header({ onMenuClick, onSearchClick }) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const { title, description } = getPageTitle(location.pathname);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const menuRef = useRef(null);
-  const showSearch = SEARCH_VISIBLE_ROUTES.has(location.pathname);
-
-  useEffect(() => {
-    const onClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  const submitSearch = (event) => {
-    event.preventDefault();
-    const query = searchValue.trim();
-    navigate(query ? `/students?search=${encodeURIComponent(query)}` : "/students");
-  };
 
   return (
     <header className="app-header">
@@ -67,52 +38,21 @@ export default function Header({ onMenuClick }) {
         <Menu size={19} />
       </button>
 
-      <div style={showSearch ? undefined : { flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
 
-      {showSearch && (
-        <form className="header-search" role="search" onSubmit={submitSearch}>
-          <Search size={16} aria-hidden="true" />
-          <label htmlFor="header-search-input" className="sr-only">Search students</label>
-          <input
-            id="header-search-input"
-            type="search"
-            placeholder="Search students by name or ID..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-          />
-        </form>
-      )}
-
-      <div className="header-actions">
-        <div className="header-user" ref={menuRef}>
-          <button
-            type="button"
-            className="header-user-trigger"
-            onClick={() => setMenuOpen((open) => !open)}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-          >
-            <Avatar name={user?.name || user?.role || "User"} size="sm" />
-            <span className="header-user-meta">
-              <strong>{user?.name || "User"}</strong>
-              <span>{user?.role || "user"}</span>
-            </span>
-            <ChevronDown size={15} className="header-user-caret" aria-hidden="true" />
-          </button>
-
-          {menuOpen && (
-            <div className="header-user-menu" role="menu">
-              <button type="button" role="menuitem" onClick={logout}>
-                <LogOut size={15} aria-hidden="true" />
-                Sign out
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
+      <button
+        type="button"
+        className="header-search-trigger"
+        onClick={onSearchClick}
+        aria-label="Open search (Ctrl+K)"
+      >
+        <Search size={15} aria-hidden="true" />
+        <span>Search...</span>
+        <kbd>{isMac ? "⌘K" : "Ctrl K"}</kbd>
+      </button>
     </header>
   );
 }

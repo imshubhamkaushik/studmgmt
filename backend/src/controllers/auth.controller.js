@@ -77,7 +77,7 @@ export async function updateUser(req, res, next) {
   try {
     res.json({
       success: true,
-      data: await auth.updateUser(req.params.id, req.body || {}),
+      data: await auth.updateUser(req.params.id, req.body || {}, req.requestId),
     });
   } catch (e) {
     next(e);

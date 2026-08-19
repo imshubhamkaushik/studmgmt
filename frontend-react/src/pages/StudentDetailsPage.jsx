@@ -39,7 +39,8 @@ export default function StudentDetailsPage() {
           if (!cancelled) setAudit(result);
         }
       } catch (e) {
-        if (!cancelled) setTabError(getApiErrorMessage(e, "Unable to load this section."));
+        if (!cancelled)
+          setTabError(getApiErrorMessage(e, "Unable to load this section."));
       }
     };
     Promise.resolve().then(run);
@@ -84,7 +85,10 @@ export default function StudentDetailsPage() {
               <span className="details-student-id">{student.studentId}</span>
               <h2>{student.name}</h2>
               <p>
-                <span className={`status-badge status-${status}`}><span className="status-badge-dot" aria-hidden="true" />{status}</span>{" "}
+                <span className={`status-badge status-${status}`}>
+                  <span className="status-badge-dot" aria-hidden="true" />
+                  {status}
+                </span>{" "}
                 Student record
               </p>
             </div>

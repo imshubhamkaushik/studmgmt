@@ -68,7 +68,7 @@ const escapeCsv = (value) => {
     value instanceof Date
       ? value.toISOString().slice(0, 10)
       : String(value ?? "");
-  return /[",\n\r]/.test(text) ? `"${text.replaceAll(/"/g, '""')}"` : text;
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 };
 
 export const exportStudents = asyncHandler(async (req, res) => {

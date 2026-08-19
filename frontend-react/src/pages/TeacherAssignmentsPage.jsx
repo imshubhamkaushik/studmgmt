@@ -62,14 +62,14 @@ export default function TeacherAssignmentsPage() {
   };
 
   return (
-    <main className="page">
-      {/* <div className="page-heading">
+    <main className="page page-narrow">
+      <div className="page-heading">
         <div>
           <p className="eyebrow">Academic staffing</p>
           <h1><Shuffle size={22} style={{ marginRight: 10, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />Teacher Assignments</h1>
           <p>Assign teachers to the classrooms they manage.</p>
         </div>
-      </div> */}
+      </div>
       {error && <div className="inline-error">{error}</div>}
 
       <section className="form-card">
@@ -77,7 +77,7 @@ export default function TeacherAssignmentsPage() {
           <div>
             <h2>Assign a teacher</h2>
             <p>
-              Assign an active teacher to a classroom they are responsible for.
+              Link an active teacher to a classroom they are responsible for.
             </p>
           </div>
         </div>

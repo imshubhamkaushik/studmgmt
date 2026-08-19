@@ -36,17 +36,37 @@ export default function AcademicYearsPage() {
     }
   };
   return (
-    <main className="page">
+    <main className="page page-narrow">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Academic structure</p>
+          <h1>Academic Years</h1>
+          <p>Create and manage academic periods.</p>
+        </div>
+      </div>
       <section className="form-card">
         <div className="section-heading">
           <div>
-            <h2><CalendarRange size={16} style={{ marginRight: 8, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />New Academic Year</h2>
+            <h2>
+              <CalendarRange
+                size={16}
+                style={{
+                  marginRight: 8,
+                  verticalAlign: -3,
+                  color: "var(--brand)",
+                }}
+                aria-hidden="true"
+              />
+              New Academic Year
+            </h2>
           </div>
         </div>
         {error && <div className="inline-error">{error}</div>}
         <form className="student-form" onSubmit={submit}>
           <div>
-            <label className="form-field-label" htmlFor="ay-name">Academic Year</label>
+            <label className="form-field-label" htmlFor="ay-name">
+              Academic Year
+            </label>
             <input
               id="ay-name"
               placeholder="2026-2027"
@@ -55,7 +75,9 @@ export default function AcademicYearsPage() {
             />
           </div>
           <div>
-            <label className="form-field-label" htmlFor="ay-start">Start Date</label>
+            <label className="form-field-label" htmlFor="ay-start">
+              Start Date
+            </label>
             <input
               id="ay-start"
               type="date"
@@ -64,7 +86,9 @@ export default function AcademicYearsPage() {
             />
           </div>
           <div>
-            <label className="form-field-label" htmlFor="ay-end">End Date</label>
+            <label className="form-field-label" htmlFor="ay-end">
+              End Date
+            </label>
             <input
               id="ay-end"
               type="date"
@@ -80,9 +104,12 @@ export default function AcademicYearsPage() {
             />
             Active year
           </label>
-          <div>
-            <label className="form-field-label" htmlFor="ay-submit">&nbsp;</label>
-            <button id="ay-submit" type="submit" className="button button-primary" style={{ width: "100%" }}>
+          <div className="form-submit-field">
+            <button
+              id="ay-submit"
+              type="submit"
+              className="button button-primary"
+            >
               Create Academic Year
             </button>
           </div>
@@ -92,15 +119,24 @@ export default function AcademicYearsPage() {
         <div className="section-heading">
           <div>
             <h2>All Academic Years</h2>
-            <p>{items?.length ?? 0} period{items?.length === 1 ? "" : "s"} on record.</p>
+            <p>
+              {items?.length ?? 0} period{items?.length === 1 ? "" : "s"} on
+              record.
+            </p>
           </div>
         </div>
         {items === null ? (
           <div className="skeleton-rows">
-            {Array.from({ length: 3 }).map((_, i) => <div className="skeleton" key={i} />)}
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div className="skeleton" key={i} />
+            ))}
           </div>
         ) : items.length === 0 ? (
-          <EmptyState icon={CalendarRange} title="No academic years yet" message="Create your first academic year above to get started." />
+          <EmptyState
+            icon={CalendarRange}
+            title="No academic years yet"
+            message="Create your first academic year above to get started."
+          />
         ) : (
           <div className="table-wrapper">
             <table className="student-table">
@@ -116,11 +152,15 @@ export default function AcademicYearsPage() {
               <tbody>
                 {items.map((x) => (
                   <tr key={x._id}>
-                    <td><strong>{x.name}</strong></td>
+                    <td>
+                      <strong>{x.name}</strong>
+                    </td>
                     <td>{new Date(x.startDate).toLocaleDateString()}</td>
                     <td>{new Date(x.endDate).toLocaleDateString()}</td>
                     <td>
-                      <span className={`status-badge status-${x.isActive ? "active" : "inactive"}`}>
+                      <span
+                        className={`status-badge status-${x.isActive ? "active" : "inactive"}`}
+                      >
                         <span className="status-badge-dot" aria-hidden="true" />
                         {x.isActive ? "Active" : "Inactive"}
                       </span>

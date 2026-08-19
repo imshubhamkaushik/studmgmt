@@ -90,3 +90,45 @@ export const updateClassroom = async (id, b, requestId) => {
   
   return room;
 };
+
+const DEFAULT_CLASSES = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const DEFAULT_SECTIONS = ["A", "B", "C"];
+
+// Bulk-creates classes 1-12, each with sections A/B/C, for a given academic
+// year. Safe to run more than once — any combination that already exists
+// (enforced by the {academicYear, className, section} unique index) is
+// silently skipped rather than causing the whole batch to fail.
+export const generateDefaultClassrooms = async (academicYearId, requestId) => {
+  const year = await AcademicYear.findById(academicYearId);
+  if (!year || year.isArchived)
+    throw new AppError("Valid academicYear is required.", 400);
+
+  const existing = await Classroom.find({ academicYear: year._id })
+    .select("className section")
+    .lean();
+  const existingKeys = new Set(
+    existing.map((r) => `${r.className}::${r.section}`),
+  );
+
+  const toCreate = [];
+  for (const className of DEFAULT_CLASSES) {
+    for (const section of DEFAULT_SECTIONS) {
+      if (!existingKeys.has(`${className}::${section}`))
+        toCreate.push({ className, section, academicYear: year._id });
+    }
+  }
+
+  if (toCreate.length === 0) return { created: 0, skipped: existing.length };
+
+  const created = await Classroom.insertMany(toCreate, { ordered: false });
+
+  await writeAudit({
+    entityType: "classroom",
+    entityId: year._id,
+    action: "GENERATE_DEFAULTS",
+    changes: { after: { count: created.length, academicYear: year.name } },
+    requestId,
+  });
+
+  return { created: created.length, skipped: existing.length };
+};

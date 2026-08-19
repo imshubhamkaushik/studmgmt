@@ -9,7 +9,8 @@ const classroomLabel = (room) => `${room.className}-${room.section}`;
 export default function PromotionPage() {
   const [years, setYears] = useState([]);
   const [rooms, setRooms] = useState([]);
-  const [sourceRows, setSourceRows] = useState([]);
+  const [rawSourceRows, setRawSourceRows] = useState([]);
+  const [sourceClassroom, setSourceClassroom] = useState("");
   const [selected, setSelected] = useState([]);
   const [rollNumbers, setRollNumbers] = useState({});
   const [form, setForm] = useState({
@@ -33,6 +34,29 @@ export default function PromotionPage() {
       })
       .catch((e) => setError(e.message || "Unable to load academic data."));
   }, []);
+
+  const sourceRooms = useMemo(
+    () =>
+      rooms.filter(
+        (room) =>
+          String(room.academicYear?._id || room.academicYear) ===
+          form.fromAcademicYearId,
+      ),
+    [rooms, form.fromAcademicYearId],
+  );
+
+  // The classroom filter is applied client-side against the already-fetched
+  // rows, so switching it doesn't require clicking "Load Students" again.
+  const sourceRows = useMemo(
+    () =>
+      sourceClassroom
+        ? rawSourceRows.filter(
+            (row) =>
+              String(row.classroom?._id || row.classroom) === sourceClassroom,
+          )
+        : rawSourceRows,
+    [rawSourceRows, sourceClassroom],
+  );
 
   const destinationRooms = useMemo(
     () =>
@@ -70,7 +94,7 @@ export default function PromotionPage() {
     setSelected([]);
     setRollNumbers({});
     if (!form.fromAcademicYearId) {
-      setSourceRows([]);
+      setRawSourceRows([]);
       return;
     }
     setLoading(true);
@@ -79,7 +103,7 @@ export default function PromotionPage() {
         academicYear: form.fromAcademicYearId,
         status: "active",
       });
-      setSourceRows(response.data || []);
+      setRawSourceRows(response.data || []);
     } catch (e) {
       setError(e.message || "Unable to load source enrollments.");
     } finally {
@@ -161,22 +185,47 @@ export default function PromotionPage() {
 
   return (
     <main className="page">
+      <div className="page-heading">
+        <div>
+          <p className="eyebrow">Academic progression</p>
+          <h1>
+            <ArrowUpFromLine
+              size={22}
+              style={{
+                marginRight: 10,
+                verticalAlign: -3,
+                color: "var(--brand)",
+              }}
+              aria-hidden="true"
+            />
+            Promote Students
+          </h1>
+          <p>
+            Move selected active enrollments to a new academic year and
+            classroom while preserving enrollment history.
+          </p>
+        </div>
+      </div>
+
       {error && <div className="inline-error">{error}</div>}
       {message && <p className="import-success">{message}</p>}
 
       <section className="card">
         <form className="student-form" onSubmit={submit}>
           <div>
-            <label className="form-field-label" htmlFor="pp-source-year">Source Academic Year</label>
+            <label className="form-field-label" htmlFor="pp-source-year">
+              Source Academic Year
+            </label>
             <select
               id="pp-source-year"
               value={form.fromAcademicYearId}
-              onChange={(e) =>
+              onChange={(e) => {
                 setForm((current) => ({
                   ...current,
                   fromAcademicYearId: e.target.value,
-                }))
-              }
+                }));
+                setSourceClassroom("");
+              }}
             >
               <option value="">Source academic year</option>
               {years.map((year) => (
@@ -187,20 +236,37 @@ export default function PromotionPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-load">&nbsp;</label>
+            <label className="form-field-label" htmlFor="pp-source-room">
+              Source Classroom
+            </label>
+            <select
+              id="pp-source-room"
+              value={sourceClassroom}
+              onChange={(e) => setSourceClassroom(e.target.value)}
+              disabled={!form.fromAcademicYearId}
+            >
+              <option value="">All source classrooms</option>
+              {sourceRooms.map((room) => (
+                <option key={room._id} value={room._id}>
+                  {classroomLabel(room)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-submit-field">
             <button
-              id="pp-load"
               type="button"
               className="button button-secondary"
               onClick={loadSource}
               disabled={loading || !form.fromAcademicYearId}
-              style={{ width: "100%" }}
             >
               {loading ? "Loading..." : "Load Students"}
             </button>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-dest-year">Destination Academic Year</label>
+            <label className="form-field-label" htmlFor="pp-dest-year">
+              Destination Academic Year
+            </label>
             <select
               id="pp-dest-year"
               value={form.toAcademicYearId}
@@ -224,7 +290,9 @@ export default function PromotionPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-dest-room">Destination Classroom</label>
+            <label className="form-field-label" htmlFor="pp-dest-room">
+              Destination Classroom
+            </label>
             <select
               id="pp-dest-room"
               value={form.toClassroomId}
@@ -248,7 +316,9 @@ export default function PromotionPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-submit">&nbsp;</label>
+            <label className="form-field-label" htmlFor="pp-submit">
+              &nbsp;
+            </label>
             <button
               id="pp-submit"
               type="submit"
@@ -290,8 +360,8 @@ export default function PromotionPage() {
                 <th>Student</th>
                 <th>Student ID</th>
                 <th>Current Classroom</th>
-                <th>Current Roll</th>
-                <th>Destination Roll</th>
+                <th>Source Roll No.</th>
+                <th>Destination Roll No.</th>
               </tr>
             </thead>
             <tbody>

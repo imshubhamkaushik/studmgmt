@@ -36,8 +36,6 @@ export const getDashboardStats = async (query = {}) => {
     studentsByClass,
     studentsBySection,
     studentsByStatus,
-    recentStudents,
-    recentlyUpdated,
     todayAttendance,
   ] = await Promise.all([
     Student.countDocuments(filter),
@@ -62,18 +60,6 @@ export const getDashboardStats = async (query = {}) => {
       { $group: { _id: "$status", count: { $sum: 1 } } },
       { $sort: { count: -1, _id: 1 } },
     ]),
-    Student.find(filter)
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .select(
-        "studentId name rollNo class section status admissionNo dob createdAt",
-      )
-      .lean(),
-    Student.find(filter)
-      .sort({ updatedAt: -1 })
-      .limit(5)
-      .select("studentId name class section status updatedAt")
-      .lean(),
     Attendance.aggregate([
       { $match: { date: today } },
       { $group: { _id: "$status", count: { $sum: 1 } } },
@@ -109,8 +95,6 @@ export const getDashboardStats = async (query = {}) => {
       status: item._id,
       count: item.count,
     })),
-    recentStudents,
-    recentlyUpdated,
     todayAttendance: {
       total: todayTotal,
       present: todayCounts.present || 0,

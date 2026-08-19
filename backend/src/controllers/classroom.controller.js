@@ -18,3 +18,12 @@ export const update = asyncHandler(async (req, res) =>
     data: await service.updateClassroom(req.params.id, req.body, req.requestId),
   }),
 );
+export const generateDefaults = asyncHandler(async (req, res) =>
+  res.status(201).json({
+    success: true,
+    data: await service.generateDefaultClassrooms(
+      req.body.academicYear,
+      req.requestId,
+    ),
+  }),
+);

@@ -21,25 +21,25 @@ import { useToast } from "../hooks/useToast";
 
 export default function StudentsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   const filters = getStudentFilters(searchParams);
-  
+
   const [searchInput, setSearchInput] = useState(filters.search);
-  
+
   const [studentToDelete, setStudentToDelete] = useState(null);
-  
+
   const [selectedIds, setSelectedIds] = useState([]);
-  
+
   const [bulkStatus, setBulkStatus] = useState("active");
-  
+
   const [savedViews, setSavedViews] = useState(() =>
     JSON.parse(localStorage.getItem("studentSavedViews") || "[]"),
   );
-  
+
   const { show } = useToast();
-  
+
   const debouncedSearch = useDebouncedValue(searchInput, 300);
-  
+
   const {
     setPage,
     setLimit,
@@ -56,9 +56,9 @@ export default function StudentsPage() {
     setSearchInput,
     setSearchParams,
   });
-  
+
   const { data: filterOptionsData } = useStudentFilterOptions();
-  
+
   const { data, isLoading, isError, error, refetch } = useStudents({
     page: filters.page,
     limit: filters.limit,
@@ -70,15 +70,15 @@ export default function StudentsPage() {
     status: filters.status || undefined,
     includeDeleted: filters.includeDeleted || undefined,
   });
-  
+
   const deleteMutation = useDeleteStudent();
-  
+
   const restoreMutation = useRestoreStudent();
-  
+
   const bulkMutation = useBulkUpdateStudents();
-  
+
   const students = data?.data ?? [];
-  
+
   const pagination = data?.pagination;
   useRecoverInvalidPage({ page: filters.page, pagination, setSearchParams });
 
@@ -93,50 +93,50 @@ export default function StudentsPage() {
       return next;
     });
   };
-  
+
   const toggle = (id) =>
     setSelectedIds((current) =>
       current.includes(id)
         ? current.filter((value) => value !== id)
         : [...current, id],
     );
-  
+
   const toggleAll = (ids) =>
     setSelectedIds((current) =>
       ids.every((id) => current.includes(id))
         ? current.filter((id) => !ids.includes(id))
         : [...new Set([...current, ...ids])],
     );
-  
+
   const handleDelete = async () => {
     if (!studentToDelete) return;
     await deleteMutation.mutateAsync(studentToDelete._id);
     setStudentToDelete(null);
     setSelectedIds((ids) => ids.filter((id) => id !== studentToDelete._id));
   };
-  
+
   const handleRestore = async (student) => {
     await restoreMutation.mutateAsync(student._id);
   };
-  
+
   const handleBulk = async () => {
     if (selectedIds.length) {
       await bulkMutation.mutateAsync({ ids: selectedIds, status: bulkStatus });
       setSelectedIds([]);
     }
   };
-  
+
   const errorMessage = deleteMutation.isError
     ? getApiErrorMessage(deleteMutation.error, "Unable to archive the student.")
     : null;
-  
+
   const saveCurrentView = () => {
     const name = window.prompt("Name this saved view:");
-    
+
     if (!name?.trim()) return;
-    
+
     const params = searchParams.toString();
-    
+
     const next = [
       ...savedViews.filter((view) => view.name !== name.trim()),
       { name: name.trim(), params },
@@ -145,18 +145,18 @@ export default function StudentsPage() {
     localStorage.setItem("studentSavedViews", JSON.stringify(next));
     show(`Saved view "${name.trim()}".`);
   };
-  
+
   const loadView = (view) => {
     setSelectedIds([]);
     setSearchParams(new URLSearchParams(view.params));
   };
-  
+
   const removeView = (name) => {
     const next = savedViews.filter((view) => view.name !== name);
     setSavedViews(next);
     localStorage.setItem("studentSavedViews", JSON.stringify(next));
   };
-  
+
   const handleDeleteWithToast = async () => {
     try {
       await handleDelete();
@@ -165,7 +165,7 @@ export default function StudentsPage() {
       show(getApiErrorMessage(err, "Unable to archive the student."), "error");
     }
   };
-  
+
   const handleRestoreWithToast = async (student) => {
     try {
       await handleRestore(student);
@@ -174,7 +174,7 @@ export default function StudentsPage() {
       show(getApiErrorMessage(err, "Unable to restore the student."), "error");
     }
   };
-  
+
   const handleBulkWithToast = async () => {
     try {
       await handleBulk();
@@ -183,7 +183,7 @@ export default function StudentsPage() {
       show(getApiErrorMessage(err, "Bulk update failed."), "error");
     }
   };
-  
+
   const handleSortChange = (field, order) => {
     setSortBy(field);
     setSortOrder(order);
