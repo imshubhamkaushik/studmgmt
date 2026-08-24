@@ -25,7 +25,7 @@ export JWT_SECRET='replace-with-a-test-secret-longer-than-32-characters'
 npm run test:integration
 ```
 
-The integration suite currently verifies role boundaries, rejection of deactivated accounts with otherwise valid access tokens, refresh-token rotation/revocation, and account lockout after repeated failed login attempts (including admin-initiated unlock). CI runs these tests against its own MongoDB service.
+The integration suite currently verifies role boundaries, rejection of deactivated accounts with otherwise valid access tokens, refresh-token rotation/revocation, account lockout after repeated failed login attempts (including admin-initiated unlock), teacher-scoped promotion and staff-privilege grants, the weighted gradebook computation (grading-term weight budgeting, exam creation, mark entry validation, and the resulting weighted subject grade), and the student/guardian portal auth system (default-credential login, per-account lockout independent between a student and their guardian, self-service password change with other-session revocation, and the hard boundary preventing portal and staff tokens from being used on each other's routes). CI runs these tests against its own MongoDB service.
 
 ## Frontend unit/component tests
 

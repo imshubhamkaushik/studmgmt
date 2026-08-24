@@ -10,6 +10,7 @@
     "migrate:student-ids": "node src/scripts/migrate-student-ids.js",
     "test": "node --test test/*.test.js",
     "migrate:student-statuses": "node src/scripts/migrate-student-statuses.js",
+    "migrate:student-portal-credentials": "node src/scripts/migrate-student-portal-credentials.js",
     "test:integration": "node --test test/integration/*.test.js"
   },
   "keywords": [
@@ -23,7 +24,8 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "mongoose": "^8.9.5"
+    "mongoose": "^8.9.5",
+    "multer": "^2.2.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"

@@ -2,7 +2,7 @@ import * as s from "../services/teacher-classroom-assignment.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
 export const list = asyncHandler(async (req, res) =>
-  res.json({ success: true, data: await s.listAssignments(req.query) }),
+  res.json({ success: true, data: await s.listAssignments(req.query, req.user) }),
 );
 export const assign = asyncHandler(async (req, res) =>
   res

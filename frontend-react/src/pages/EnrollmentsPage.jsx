@@ -80,18 +80,7 @@ export default function EnrollmentsPage() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">Academic placement</p>
-          <h1>
-            <ArrowLeftRight
-              size={22}
-              style={{
-                marginRight: 10,
-                verticalAlign: -3,
-                color: "var(--brand)",
-              }}
-              aria-hidden="true"
-            />
-            Enrollments
-          </h1>
+          <h1><ArrowLeftRight size={22} style={{ marginRight: 10, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />Enrollments</h1>
           <p>
             Assign students to academic classrooms. To move students between
             academic years, use the Promotions page.
@@ -109,9 +98,7 @@ export default function EnrollmentsPage() {
         </div>
         <form className="student-form" onSubmit={submit}>
           <div>
-            <label className="form-field-label" htmlFor="en-student">
-              Student
-            </label>
+            <label className="form-field-label" htmlFor="en-student">Student</label>
             <select
               id="en-student"
               required
@@ -129,9 +116,7 @@ export default function EnrollmentsPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="en-year">
-              Academic Year
-            </label>
+            <label className="form-field-label" htmlFor="en-year">Academic Year</label>
             <select
               id="en-year"
               required
@@ -154,16 +139,12 @@ export default function EnrollmentsPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="en-classroom">
-              Classroom
-            </label>
+            <label className="form-field-label" htmlFor="en-classroom">Classroom</label>
             <select
               id="en-classroom"
               required
               value={form.classroomId}
-              onChange={(e) =>
-                setForm({ ...form, classroomId: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, classroomId: e.target.value })}
             >
               <option value="">Select classroom</option>
               {filteredRooms(form.academicYearId).map((r) => (
@@ -175,9 +156,7 @@ export default function EnrollmentsPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="en-roll">
-              Roll Number
-            </label>
+            <label className="form-field-label" htmlFor="en-roll">Roll Number</label>
             <input
               id="en-roll"
               required
@@ -188,12 +167,9 @@ export default function EnrollmentsPage() {
               onChange={(e) => setForm({ ...form, rollNo: e.target.value })}
             />
           </div>
-          <div className="form-submit-field">
-            <button
-              type="submit"
-              className="button button-primary"
-              disabled={busy}
-            >
+          <div>
+            <label className="form-field-label" htmlFor="en-submit">&nbsp;</label>
+            <button id="en-submit" type="submit" className="button button-primary" disabled={busy} style={{ width: "100%" }}>
               {busy ? "Saving..." : "Enroll Student"}
             </button>
           </div>
@@ -211,9 +187,7 @@ export default function EnrollmentsPage() {
           </div>
           {rows.length > 6 && (
             <div className="search-field" style={{ maxWidth: 240 }}>
-              <label htmlFor="history-search" className="sr-only">
-                Search enrollment history
-              </label>
+              <label htmlFor="history-search" className="sr-only">Search enrollment history</label>
               <Search size={15} aria-hidden="true" />
               <input
                 id="history-search"

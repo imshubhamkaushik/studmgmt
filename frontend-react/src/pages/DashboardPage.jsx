@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   PieChart,
   Pie,
+  Cell,
   ResponsiveContainer,
   Tooltip,
   BarChart,
@@ -57,14 +58,9 @@ const STATUS_COLORS = {
 function DashboardSkeleton() {
   return (
     <div className="dashboard-page">
-      <div
-        className="skeleton"
-        style={{ height: 38, width: 260, borderRadius: 999, marginBottom: 22 }}
-      />
+      <div className="skeleton" style={{ height: 38, width: 260, borderRadius: 999, marginBottom: 22 }} />
       <div className="skeleton-stats">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div className="skeleton" key={i} />
-        ))}
+        {Array.from({ length: 4 }).map((_, i) => <div className="skeleton" key={i} />)}
       </div>
       <div className="skeleton-charts">
         <div className="skeleton" />
@@ -96,14 +92,6 @@ function ActivityFeed() {
 
   const entries = data?.data ?? [];
 
-  const formatClassLabel = (label) => {
-    if (typeof label === "string" || typeof label === "number") {
-      return `Class ${label}`;
-    }
-
-    return "Class";
-  };
-
   return (
     <article className="dashboard-card">
       <div className="section-heading">
@@ -114,16 +102,10 @@ function ActivityFeed() {
       </div>
       {isLoading ? (
         <div className="skeleton-rows">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div className="skeleton" key={i} style={{ height: 40 }} />
-          ))}
+          {Array.from({ length: 5 }).map((_, i) => <div className="skeleton" key={i} style={{ height: 40 }} />)}
         </div>
       ) : entries.length === 0 ? (
-        <EmptyState
-          icon={History}
-          title="No activity yet"
-          message="Actions across the app will show up here."
-        />
+        <EmptyState icon={History} title="No activity yet" message="Actions across the app will show up here." />
       ) : (
         <div className="recent-students-list">
           {entries.map((entry) => {
@@ -136,16 +118,9 @@ function ActivityFeed() {
                 ? { to: `/students/${entry.entityId}` }
                 : { style: { cursor: "default" } };
             return (
-              <Wrapper
-                key={entry._id}
-                className="recent-student-item"
-                {...wrapperProps}
-              >
+              <Wrapper key={entry._id} className="recent-student-item" {...wrapperProps}>
                 <div className="recent-student-item-main">
-                  <span
-                    className="stat-card-icon"
-                    style={{ width: 28, height: 28 }}
-                  >
+                  <span className="stat-card-icon" style={{ width: 28, height: 28 }}>
                     <Icon size={14} aria-hidden="true" />
                   </span>
                   <div>
@@ -186,16 +161,9 @@ export default function DashboardPage() {
   const stats = data?.data;
   const statusData = (stats?.studentsByStatus ?? []).map((item) => {
     const status = item.status || item._id || "unknown";
-    return {
-      status,
-      count: item.count,
-      fill: STATUS_COLORS[status] || "#98a2b3",
-    };
+    return { status, count: item.count, color: STATUS_COLORS[status] || "#98a2b3" };
   });
-  const totalStatusCount = statusData.reduce(
-    (sum, item) => sum + item.count,
-    0,
-  );
+  const totalStatusCount = statusData.reduce((sum, item) => sum + item.count, 0);
   const classData = stats?.studentsByClass ?? [];
   const attendance = stats?.todayAttendance;
   const inactivePct = stats?.totalStudents
@@ -240,45 +208,25 @@ export default function DashboardPage() {
         <article className="stat-card">
           <div className="stat-card-top">
             <span className="stat-card-label">Total Students</span>
-            <span className="stat-card-icon">
-              <Users size={16} />
-            </span>
+            <span className="stat-card-icon"><Users size={16} /></span>
           </div>
-          <strong className="stat-card-value">
-            {stats?.totalStudents ?? 0}
-          </strong>
-          <span className="stat-card-description">
-            Students currently in the system
-          </span>
+          <strong className="stat-card-value">{stats?.totalStudents ?? 0}</strong>
+          <span className="stat-card-description">Students currently in the system</span>
         </article>
 
         <article className="stat-card">
           <div className="stat-card-top">
             <span className="stat-card-label">Active Students</span>
-            <span
-              className="stat-card-icon"
-              style={{
-                background: "var(--success-soft)",
-                color: "var(--success)",
-              }}
-            >
+            <span className="stat-card-icon" style={{ background: "var(--success-soft)", color: "var(--success)" }}>
               <UserCheck size={16} />
             </span>
           </div>
-          <strong className="stat-card-value">
-            {stats?.activeStudents ?? 0}
-          </strong>
+          <strong className="stat-card-value">{stats?.activeStudents ?? 0}</strong>
           <span className="stat-card-description">
             {inactivePct > 0 ? (
-              <span className="stat-card-trend stat-card-trend-down">
-                <ArrowDownRight size={13} />
-                {inactivePct}%
-              </span>
+              <span className="stat-card-trend stat-card-trend-down"><ArrowDownRight size={13} />{inactivePct}%</span>
             ) : (
-              <span className="stat-card-trend stat-card-trend-up">
-                <ArrowUpRight size={13} />
-                100%
-              </span>
+              <span className="stat-card-trend stat-card-trend-up"><ArrowUpRight size={13} />100%</span>
             )}
             of total students
           </span>
@@ -287,42 +235,25 @@ export default function DashboardPage() {
         <article className="stat-card">
           <div className="stat-card-top">
             <span className="stat-card-label">Today&apos;s Attendance</span>
-            <span
-              className="stat-card-icon"
-              style={{
-                background: "var(--indigo-soft)",
-                color: "var(--indigo)",
-              }}
-            >
+            <span className="stat-card-icon" style={{ background: "var(--indigo-soft)", color: "var(--indigo)" }}>
               <CalendarCheck size={16} />
             </span>
           </div>
-          <strong className="stat-card-value">
-            {attendance?.percentage ?? 0}%
-          </strong>
+          <strong className="stat-card-value">{attendance?.percentage ?? 0}%</strong>
           <span className="stat-card-description">
-            {attendance?.present ?? 0} present · {attendance?.absent ?? 0}{" "}
-            absent
+            {attendance?.present ?? 0} present · {attendance?.absent ?? 0} absent
           </span>
         </article>
 
         <article className="stat-card">
           <div className="stat-card-top">
             <span className="stat-card-label">Classes</span>
-            <span
-              className="stat-card-icon"
-              style={{
-                background: "var(--warning-soft)",
-                color: "var(--warning)",
-              }}
-            >
+            <span className="stat-card-icon" style={{ background: "var(--warning-soft)", color: "var(--warning)" }}>
               <School size={16} />
             </span>
           </div>
           <strong className="stat-card-value">{classData.length}</strong>
-          <span className="stat-card-description">
-            Distinct classes represented
-          </span>
+          <span className="stat-card-description">Distinct classes represented</span>
         </article>
       </section>
 
@@ -340,22 +271,12 @@ export default function DashboardPage() {
               <div className="chart-donut-wrap">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                    <Pie
-                      data={statusData}
-                      dataKey="count"
-                      nameKey="status"
-                      innerRadius={48}
-                      outerRadius={70}
-                      paddingAngle={3}
-                      stroke="none"
-                    />
+                    <Pie data={statusData} dataKey="count" nameKey="status" innerRadius={48} outerRadius={70} paddingAngle={3} stroke="none">
+                      {statusData.map((entry) => <Cell key={entry.status} fill={entry.color} />)}
+                    </Pie>
                     <Tooltip
                       formatter={(value, name) => [`${value} students`, name]}
-                      contentStyle={{
-                        borderRadius: 10,
-                        border: "1px solid var(--line)",
-                        fontSize: 12,
-                      }}
+                      contentStyle={{ borderRadius: 10, border: "1px solid var(--line)", fontSize: 12 }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -367,17 +288,11 @@ export default function DashboardPage() {
               <div className="chart-legend">
                 {statusData.map((item) => (
                   <div className="chart-legend-row" key={item.status}>
-                    <span
-                      className="chart-legend-dot"
-                      style={{ background: item.color }}
-                    />
+                    <span className="chart-legend-dot" style={{ background: item.color }} />
                     <span className="chart-legend-label">{item.status}</span>
                     <strong className="chart-legend-count">{item.count}</strong>
                     <span className="chart-legend-pct">
-                      {totalStatusCount
-                        ? Math.round((item.count / totalStatusCount) * 100)
-                        : 0}
-                      %
+                      {totalStatusCount ? Math.round((item.count / totalStatusCount) * 100) : 0}%
                     </span>
                   </div>
                 ))}
@@ -387,11 +302,7 @@ export default function DashboardPage() {
             <EmptyState
               title="No student data yet"
               message="Add your first student to see the status breakdown."
-              action={
-                <Link to="/students/new" className="button button-primary">
-                  Add Student
-                </Link>
-              }
+              action={<Link to="/students/new" className="button button-primary">Add Student</Link>}
             />
           )}
         </article>
@@ -408,48 +319,22 @@ export default function DashboardPage() {
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={classData} barSize={24}>
                 <CartesianGrid vertical={false} stroke="var(--line)" />
-                <XAxis
-                  dataKey="class"
-                  tick={{ fontSize: 11, fill: "var(--muted)" }}
-                  axisLine={{ stroke: "var(--line)" }}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: "var(--muted)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={28}
-                  allowDecimals={false}
-                />
+                <XAxis dataKey="class" tick={{ fontSize: 11, fill: "var(--muted)" }} axisLine={{ stroke: "var(--line)" }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={28} allowDecimals={false} />
                 <Tooltip
                   cursor={{ fill: "var(--brand-soft)" }}
-                  labelFormatter={formatClassLabel}
-                  formatter={(value) => [
-                    `${value} student${value === 1 ? "" : "s"}`,
-                    "",
-                  ]}
-                  contentStyle={{
-                    borderRadius: 10,
-                    border: "1px solid var(--line)",
-                    fontSize: 12,
-                  }}
+                  labelFormatter={(label) => `Class ${label}`}
+                  formatter={(value) => [`${value} student${value === 1 ? "" : "s"}`, ""]}
+                  contentStyle={{ borderRadius: 10, border: "1px solid var(--line)", fontSize: 12 }}
                 />
-                <Bar
-                  dataKey="count"
-                  fill="var(--brand)"
-                  radius={[6, 6, 0, 0]}
-                />
+                <Bar dataKey="count" fill="var(--brand)" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <EmptyState
               title="No student data yet"
               message="Add your first student to see class distribution."
-              action={
-                <Link to="/students/new" className="button button-primary">
-                  Add Student
-                </Link>
-              }
+              action={<Link to="/students/new" className="button button-primary">Add Student</Link>}
             />
           )}
         </article>

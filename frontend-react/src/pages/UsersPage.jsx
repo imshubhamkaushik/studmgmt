@@ -8,6 +8,8 @@ import {
   KeyRound,
   UserX,
   UserCheck,
+  ShieldPlus,
+  ShieldMinus,
 } from "lucide-react";
 import * as api from "../api/auth";
 import { useToast } from "../hooks/useToast";
@@ -71,6 +73,19 @@ export default function UsersPage() {
       toast.show(variables.isActive ? "User reactivated." : "User deactivated.");
     },
     onError: (err) => toast.show(getApiErrorMessage(err, "Unable to update this user."), "error"),
+  });
+
+  const toggleStaffPrivileges = useMutation({
+    mutationFn: ({ id, hasStaffPrivileges }) => api.updateUser(id, { hasStaffPrivileges }),
+    onSuccess: (_, variables) => {
+      invalidate();
+      toast.show(
+        variables.hasStaffPrivileges
+          ? "Staff privileges granted — this teacher can now do everything a staff account can."
+          : "Staff privileges revoked.",
+      );
+    },
+    onError: (err) => toast.show(getApiErrorMessage(err, "Unable to update staff privileges."), "error"),
   });
 
   const resetPassword = useMutation({
@@ -206,10 +221,18 @@ export default function UsersPage() {
                         </span>
                       </td>
                       <td>
-                        <span className="status-badge" style={{ background: "var(--indigo-soft)", color: "var(--indigo)" }}>
-                          <ShieldCheck size={11} style={{ marginRight: 4 }} aria-hidden="true" />
-                          {ROLE_LABELS[user.role] || user.role}
-                        </span>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                          <span className="status-badge" style={{ background: "var(--indigo-soft)", color: "var(--indigo)" }}>
+                            <ShieldCheck size={11} style={{ marginRight: 4 }} aria-hidden="true" />
+                            {ROLE_LABELS[user.role] || user.role}
+                          </span>
+                          {user.role === "teacher" && user.hasStaffPrivileges && (
+                            <span className="status-badge" style={{ background: "var(--brand-soft)", color: "var(--brand-strong)" }} title="Can also do everything a staff account can">
+                              <ShieldPlus size={11} style={{ marginRight: 4 }} aria-hidden="true" />
+                              + Staff
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -247,6 +270,32 @@ export default function UsersPage() {
                                 icon: KeyRound,
                                 onClick: () => setResetTarget(user),
                               },
+                              ...(user.role === "teacher"
+                                ? [
+                                    { key: "divider-staff", divider: true },
+                                    user.hasStaffPrivileges
+                                      ? {
+                                          key: "revoke-staff",
+                                          label: "Revoke Staff Privileges",
+                                          icon: ShieldMinus,
+                                          onClick: () =>
+                                            toggleStaffPrivileges.mutate({
+                                              id: user._id,
+                                              hasStaffPrivileges: false,
+                                            }),
+                                        }
+                                      : {
+                                          key: "grant-staff",
+                                          label: "Grant Staff Privileges",
+                                          icon: ShieldPlus,
+                                          onClick: () =>
+                                            toggleStaffPrivileges.mutate({
+                                              id: user._id,
+                                              hasStaffPrivileges: true,
+                                            }),
+                                        },
+                                  ]
+                                : []),
                               { key: "divider", divider: true },
                               user.isActive
                                 ? {

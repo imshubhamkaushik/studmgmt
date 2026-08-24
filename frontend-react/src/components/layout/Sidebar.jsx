@@ -32,7 +32,7 @@ const navigationGroups = [
       { to: "/academic-years", label: "Academic Years", icon: CalendarRange, roles: ["admin"] },
       { to: "/classrooms", label: "Classrooms", icon: School, roles: ["admin"] },
       { to: "/enrollments", label: "Enrollments", icon: ArrowLeftRight, roles: ["admin", "staff"] },
-      { to: "/promotions", label: "Promotions", icon: ArrowUpFromLine, roles: ["admin"] },
+      { to: "/promotions", label: "Promotions", icon: ArrowUpFromLine, roles: ["admin", "teacher"] },
     ],
   },
   {
@@ -107,11 +107,11 @@ function SidebarUserMenu({ user, logout }) {
 }
 
 export default function Sidebar({ open = false, onClose }) {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const visibleGroups = navigationGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.roles || item.roles.includes(user?.role)),
+      items: group.items.filter((item) => !item.roles || hasRole(...item.roles)),
     }))
     .filter((group) => group.items.length > 0);
 

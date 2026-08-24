@@ -14,8 +14,7 @@ const DESCRIPTIONS = {
   "classroom:UPDATE": "updated a classroom",
   "classroom:GENERATE_DEFAULTS": "generated default classrooms",
   "teacher_classroom_assignment:ASSIGN": "assigned a teacher to a classroom",
-  "teacher_classroom_assignment:REVOKE":
-    "revoked a teacher's classroom assignment",
+  "teacher_classroom_assignment:REVOKE": "revoked a teacher's classroom assignment",
   "user:CREATE": "added a new user account",
 };
 
@@ -24,9 +23,10 @@ function describeUserUpdate(entry) {
   const parts = [];
   if (after.passwordReset) parts.push("reset a password");
   if (after.role) parts.push(`changed a role to ${after.role.to}`);
-  if (after.isActive)
-    parts.push(after.isActive.to ? "reactivated a user" : "deactivated a user");
+  if (after.isActive) parts.push(after.isActive.to ? "reactivated a user" : "deactivated a user");
   if (after.unlocked) parts.push("unlocked a user account");
+  if (after.hasStaffPrivileges)
+    parts.push(after.hasStaffPrivileges.to ? "granted staff privileges" : "revoked staff privileges");
   return parts.length > 0 ? parts.join(", ") : "updated a user account";
 }
 

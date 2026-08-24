@@ -46,6 +46,17 @@ const studentSchema = new mongoose.Schema(
     dob: { type: Date, required: [true, "Date of birth is required."] },
     isDeleted: { type: Boolean, default: false, index: true },
     deletedAt: { type: Date, default: null },
+    // Portal login credentials — hidden from normal queries the same way
+    // User's password fields are, opt-in only via .select("+passwordHash").
+    passwordHash: { type: String, select: false, default: null },
+    passwordSalt: { type: String, select: false, default: null },
+    // null means the account is still on its auto-generated default
+    // password (studentId + DOB). Set once the student or guardian
+    // changes it themselves — never forced, just tracked so the portal UI
+    // can show a gentle, dismissible reminder rather than blocking access.
+    passwordChangedAt: { type: Date, default: null },
+    portalFailedLoginAttempts: { type: Number, default: 0 },
+    portalLockedUntil: { type: Date, default: null },
   },
   { timestamps: true, versionKey: false },
 );

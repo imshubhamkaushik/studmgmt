@@ -11,7 +11,15 @@ import attendanceRoutes from "./routes/attendance.routes.js";
 import enrollmentRoutes from "./routes/enrollment.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import teacherClassroomAssignmentRoutes from "./routes/teacher-classroom-assignment.routes.js";
-import { authenticate, authorize } from "./middleware/auth.middleware.js";
+import subjectRoutes from "./routes/subject.routes.js";
+import gradingTermRoutes from "./routes/grading-term.routes.js";
+import examRoutes from "./routes/exam.routes.js";
+import markEntryRoutes from "./routes/mark-entry.routes.js";
+import timetableRoutes from "./routes/timetable.routes.js";
+import assignmentRoutes from "./routes/assignment.routes.js";
+import assignmentSubmissionRoutes from "./routes/assignment-submission.routes.js";
+import portalAuthRoutes from "./routes/portal-auth.routes.js";
+import { authenticate } from "./middleware/auth.middleware.js";
 import { AppError } from "./utils/AppError.js";
 import { notFoundHandler } from "./middleware/not-found.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
@@ -91,23 +99,14 @@ app.get("/api/v1/ready", (req, res) => {
 });
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/portal/auth", portalAuthRoutes);
 
 // All business APIs require authentication. Authorization is enforced by route modules.
 app.use("/api/v1/students", authenticate, studentRoutes);
 app.use("/api/v1/dashboard", authenticate, dashboardRoutes);
 app.use("/api/v1/audit", authenticate, auditRoutes);
-app.use(
-  "/api/v1/academic-years",
-  authenticate,
-  authorize("admin"),
-  academicYearRoutes,
-);
-app.use(
-  "/api/v1/classrooms",
-  authenticate,
-  authorize("admin"),
-  classroomRoutes,
-);
+app.use("/api/v1/academic-years", authenticate, academicYearRoutes);
+app.use("/api/v1/classrooms", authenticate, classroomRoutes);
 app.use("/api/v1/attendance", authenticate, attendanceRoutes);
 app.use("/api/v1/enrollments", authenticate, enrollmentRoutes);
 app.use(
@@ -115,6 +114,13 @@ app.use(
   authenticate,
   teacherClassroomAssignmentRoutes,
 );
+app.use("/api/v1/subjects", authenticate, subjectRoutes);
+app.use("/api/v1/grading-terms", authenticate, gradingTermRoutes);
+app.use("/api/v1/exams", authenticate, examRoutes);
+app.use("/api/v1/marks", authenticate, markEntryRoutes);
+app.use("/api/v1/timetable", authenticate, timetableRoutes);
+app.use("/api/v1/assignments", authenticate, assignmentRoutes);
+app.use("/api/v1/assignment-submissions", authenticate, assignmentSubmissionRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 

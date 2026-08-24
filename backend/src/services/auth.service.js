@@ -27,6 +27,7 @@ const publicUser = (u) => ({
   email: u.email,
   role: u.role,
   isActive: u.isActive,
+  hasStaffPrivileges: Boolean(u.hasStaffPrivileges),
 });
 
 const issueAccess = (u) =>
@@ -39,16 +40,16 @@ const issueAccess = (u) =>
 export async function bootstrapAdmin() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase(),
     password = process.env.ADMIN_PASSWORD;
-
+  
   if (!email || !password) return;
-
+  
   if (password.length < 12)
     throw new Error("ADMIN_PASSWORD must be at least 12 characters.");
-
+  
   if (await User.exists({ email })) return;
-
+  
   const { hash, salt } = hashPassword(password);
-
+  
   await User.create({
     name: process.env.ADMIN_NAME || "Administrator",
     email,
@@ -60,9 +61,9 @@ export async function bootstrapAdmin() {
 
 async function createSession(user, meta = {}) {
   const refreshToken = createRefreshToken();
-
+  
   const expiresAt = new Date(Date.now() + refreshDays() * 86400000);
-
+  
   const session = await Session.create({
     user: user._id,
     tokenHash: hashRefreshToken(refreshToken),
@@ -70,21 +71,21 @@ async function createSession(user, meta = {}) {
     userAgent: meta.userAgent?.slice(0, 500) || null,
     ip: meta.ip || null,
   });
-
+  
   return { refreshToken, session };
 }
 
 export async function login({ email, password }, meta = {}) {
   if (!email || !password)
     throw new AppError("Email and password are required.", 400);
-
+  
   const user = await User.findOne({
     email: String(email).trim().toLowerCase(),
   }).select("+passwordHash +passwordSalt");
-
+  
   if (!user || !user.isActive)
     throw new AppError("Invalid email or password.", 401);
-
+  
   if (user.lockedUntil && user.lockedUntil > new Date()) {
     const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 60000);
     throw new AppError(
@@ -92,7 +93,7 @@ export async function login({ email, password }, meta = {}) {
       423,
     );
   }
-
+  
   if (!verifyPassword(String(password), user.passwordHash, user.passwordSalt)) {
     user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
     if (user.failedLoginAttempts >= LOCKOUT_THRESHOLD) {
@@ -102,15 +103,15 @@ export async function login({ email, password }, meta = {}) {
     await user.save();
     throw new AppError("Invalid email or password.", 401);
   }
-
+  
   user.failedLoginAttempts = 0;
   user.lockedUntil = null;
   user.lastLoginAt = new Date();
-
+  
   await user.save();
-
+  
   const { refreshToken } = await createSession(user, meta);
-
+  
   return {
     user: publicUser(user),
     accessToken: issueAccess(user),
@@ -121,24 +122,24 @@ export async function login({ email, password }, meta = {}) {
 
 export async function refresh(rawToken, meta = {}) {
   if (!rawToken) throw new AppError("Refresh token is required.", 401);
-
+  
   const old = await Session.findOne({
     tokenHash: hashRefreshToken(rawToken),
     revokedAt: null,
     expiresAt: { $gt: new Date() },
   }).populate("user");
-
+  
   if (!old || !old.user?.isActive)
     throw new AppError("Invalid or expired refresh session.", 401);
-
+  
   const { refreshToken, session } = await createSession(old.user, meta);
-
+  
   old.revokedAt = new Date();
-
+  
   old.replacedBy = session._id;
-
+  
   await old.save();
-
+  
   return {
     user: publicUser(old.user),
     accessToken: issueAccess(old.user),
@@ -149,7 +150,7 @@ export async function refresh(rawToken, meta = {}) {
 
 export async function logout(rawToken) {
   if (!rawToken) return;
-
+  
   await Session.updateOne(
     { tokenHash: hashRefreshToken(rawToken), revokedAt: null },
     { $set: { revokedAt: new Date() } },
@@ -158,31 +159,31 @@ export async function logout(rawToken) {
 
 export async function getMe(id) {
   const u = await User.findById(id);
-
+  
   if (!u || !u.isActive)
     throw new AppError("User account is unavailable.", 401);
-
+  
   return publicUser(u);
 }
 
 export async function listUsers() {
   return User.find()
-    .select("name email role isActive lastLoginAt lockedUntil createdAt")
+    .select("name email role isActive hasStaffPrivileges lastLoginAt lockedUntil createdAt")
     .sort({ createdAt: -1 });
 }
 
 export async function createUser(input, requestId) {
   if (!input.name || !input.email || !input.password || !input.role)
     throw new AppError("Name, email, password and role are required.", 400);
-
+  
   if (!["admin", "staff", "teacher"].includes(input.role))
     throw new AppError("Invalid role.", 400);
-
+  
   if (String(input.password).length < 12)
     throw new AppError("Password must be at least 12 characters.", 400);
-
+  
   const { hash, salt } = hashPassword(String(input.password));
-
+  
   try {
     const user = await User.create({
       name: String(input.name).trim(),
@@ -196,9 +197,7 @@ export async function createUser(input, requestId) {
       entityType: "user",
       entityId: user._id,
       action: "CREATE",
-      changes: {
-        after: { name: user.name, email: user.email, role: user.role },
-      },
+      changes: { after: { name: user.name, email: user.email, role: user.role } },
       requestId,
     });
 
@@ -210,101 +209,86 @@ export async function createUser(input, requestId) {
   }
 }
 
-function applyPasswordReset(user, password, changeSummary) {
-  if (!password) {
-    return false;
-  }
-
-  if (String(password).length < 12) {
-    throw new AppError("Password must be at least 12 characters.", 400);
-  }
-
-  const { hash, salt } = hashPassword(String(password));
-
-  user.passwordHash = hash;
-  user.passwordSalt = salt;
-  user.failedLoginAttempts = 0;
-  user.lockedUntil = null;
-
-  changeSummary.passwordReset = true;
-
-  return true;
-}
-
 export async function updateUser(id, input, requestId) {
   const u = await User.findById(id).select("+passwordHash +passwordSalt");
-
-  if (!u) {
-    throw new AppError("User not found.", 404);
-  }
-
-  const before = {
-    role: u.role,
-    isActive: u.isActive,
-    name: u.name,
-  };
-
+  
+  if (!u) throw new AppError("User not found.", 404);
+  
+  const before = { role: u.role, isActive: u.isActive, name: u.name };
   const changeSummary = {};
-
+  let passwordWasReset = false;
+  
   if (input.role) {
-    if (!["admin", "staff", "teacher"].includes(input.role)) {
+    if (!["admin", "staff", "teacher"].includes(input.role))
       throw new AppError("Invalid role.", 400);
-    }
-
-    if (input.role !== u.role) {
-      changeSummary.role = {
-        from: u.role,
-        to: input.role,
-      };
-    }
-
+    if (input.role !== u.role) changeSummary.role = { from: u.role, to: input.role };
     u.role = input.role;
-  }
-
-  if (typeof input.isActive === "boolean") {
-    if (input.isActive !== u.isActive) {
-      changeSummary.isActive = {
-        from: u.isActive,
-        to: input.isActive,
-      };
+    if (input.role !== "teacher" && u.hasStaffPrivileges) {
+      u.hasStaffPrivileges = false;
+      changeSummary.hasStaffPrivileges = { from: true, to: false, reason: "role changed" };
     }
-
+  }
+  
+  if (typeof input.isActive === "boolean") {
+    if (input.isActive !== u.isActive)
+      changeSummary.isActive = { from: u.isActive, to: input.isActive };
     u.isActive = input.isActive;
   }
-
+  
+  if (typeof input.hasStaffPrivileges === "boolean") {
+    const targetRole = input.role || u.role;
+    if (targetRole !== "teacher")
+      throw new AppError("Staff privileges only apply to teacher accounts.", 400);
+    if (input.hasStaffPrivileges !== u.hasStaffPrivileges)
+      changeSummary.hasStaffPrivileges = {
+        from: u.hasStaffPrivileges,
+        to: input.hasStaffPrivileges,
+      };
+    u.hasStaffPrivileges = input.hasStaffPrivileges;
+  }
+  
   if (input.unlock) {
     u.failedLoginAttempts = 0;
     u.lockedUntil = null;
     changeSummary.unlocked = true;
   }
-
-  if (input.name) {
-    u.name = String(input.name).trim();
+  
+  if (input.name) u.name = String(input.name).trim();
+  
+  if (input.password) {
+    if (String(input.password).length < 12)
+      throw new AppError("Password must be at least 12 characters.", 400);
+    const { hash, salt } = hashPassword(String(input.password));
+    u.passwordHash = hash;
+    u.passwordSalt = salt;
+    u.failedLoginAttempts = 0;
+    u.lockedUntil = null;
+    passwordWasReset = true;
+    // Never record the password itself in the audit trail — only the fact
+    // that a reset happened.
+    changeSummary.passwordReset = true;
   }
-
-  const passwordWasReset = applyPasswordReset(u, input.password, changeSummary);
-
+  
   await u.save();
-
-  if (!u.isActive || passwordWasReset) {
+  
+  // A stale session should never survive a credential reset or a
+  // deactivation — both revoke every existing refresh token for this user,
+  // forcing re-authentication immediately rather than waiting up to
+  // JWT_REFRESH_TTL_DAYS for the old session to expire on its own.
+  if (!u.isActive || passwordWasReset)
     await Session.updateMany(
       { user: u._id, revokedAt: null },
       { $set: { revokedAt: new Date() } },
     );
-  }
-
-  if (Object.keys(changeSummary).length > 0) {
+  
+  if (Object.keys(changeSummary).length > 0)
     await writeAudit({
       entityType: "user",
       entityId: u._id,
       action: "UPDATE",
-      changes: {
-        before,
-        after: changeSummary,
-      },
+      changes: { before, after: changeSummary },
       requestId,
     });
-  }
-
+  
   return publicUser(u);
 }

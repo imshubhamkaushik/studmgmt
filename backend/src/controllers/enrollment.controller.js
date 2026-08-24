@@ -20,6 +20,6 @@ export const promote = asyncHandler(async (req, res) =>
     .status(201)
     .json({
       success: true,
-      data: await service.promoteStudents(req.body, req.requestId),
+      data: await service.promoteStudents(req.body, req.requestId, req.user),
     }),
 );

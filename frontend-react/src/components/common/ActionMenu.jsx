@@ -9,23 +9,16 @@ export default function ActionMenu({ items, label = "More actions" }) {
     if (!open) return undefined;
 
     const onClickOutside = (event) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
         setOpen(false);
       }
     };
-
     const onKeyDown = (event) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
+      if (event.key === "Escape") setOpen(false);
     };
 
     document.addEventListener("mousedown", onClickOutside);
     document.addEventListener("keydown", onKeyDown);
-
     return () => {
       document.removeEventListener("mousedown", onClickOutside);
       document.removeEventListener("keydown", onKeyDown);
@@ -49,18 +42,13 @@ export default function ActionMenu({ items, label = "More actions" }) {
         <div className="action-menu-list" role="menu">
           {items.map((item) =>
             item.divider ? (
-              <hr
-                className="action-menu-divider"
-                key={item.key || item.label}
-              />
+              <div className="action-menu-divider" key={item.key || item.label} role="separator" />
             ) : (
               <button
                 key={item.key || item.label}
                 type="button"
                 role="menuitem"
-                className={`action-menu-item${
-                  item.danger ? " action-menu-item-danger" : ""
-                }`}
+                className={`action-menu-item${item.danger ? " action-menu-item-danger" : ""}`}
                 disabled={item.disabled}
                 onClick={() => {
                   setOpen(false);

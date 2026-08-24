@@ -3,12 +3,17 @@ import { ArrowUpFromLine } from "lucide-react";
 import { getAcademicYears } from "../api/academicYears";
 import { getClassrooms } from "../api/classrooms";
 import { getEnrollments, promoteStudents } from "../api/enrollments";
+import { listTeacherAssignments } from "../api/teacherAssignments";
+import { useAuth } from "../auth/useAuth";
 
 const classroomLabel = (room) => `${room.className}-${room.section}`;
 
 export default function PromotionPage() {
+  const { user } = useAuth();
+  const isTeacher = user?.role === "teacher";
   const [years, setYears] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [assignedClassroomIds, setAssignedClassroomIds] = useState(null);
   const [rawSourceRows, setRawSourceRows] = useState([]);
   const [sourceClassroom, setSourceClassroom] = useState("");
   const [selected, setSelected] = useState([]);
@@ -24,25 +29,39 @@ export default function PromotionPage() {
   const [promoting, setPromoting] = useState(false);
 
   useEffect(() => {
-    Promise.all([
+    const requests = [
       getAcademicYears(),
       getClassrooms({ includeInactive: "true" }),
-    ])
-      .then(([yearResponse, roomResponse]) => {
+    ];
+    // Teachers only get to act on classrooms they're the assigned class
+    // teacher for — self-scoped by the backend, so this only ever returns
+    // this teacher's own assignments.
+    if (isTeacher) requests.push(listTeacherAssignments({ activeOnly: "true" }));
+
+    Promise.all(requests)
+      .then(([yearResponse, roomResponse, assignmentResponse]) => {
         setYears(yearResponse.data || []);
         setRooms(roomResponse.data || []);
+        if (assignmentResponse) {
+          setAssignedClassroomIds(
+            new Set(
+              assignmentResponse.map((a) => String(a.classroom?._id || a.classroom)),
+            ),
+          );
+        }
       })
       .catch((e) => setError(e.message || "Unable to load academic data."));
-  }, []);
+  }, [isTeacher]);
 
   const sourceRooms = useMemo(
     () =>
       rooms.filter(
         (room) =>
           String(room.academicYear?._id || room.academicYear) ===
-          form.fromAcademicYearId,
+            form.fromAcademicYearId &&
+          (!assignedClassroomIds || assignedClassroomIds.has(String(room._id))),
       ),
-    [rooms, form.fromAcademicYearId],
+    [rooms, form.fromAcademicYearId, assignedClassroomIds],
   );
 
   // The classroom filter is applied client-side against the already-fetched
@@ -63,9 +82,11 @@ export default function PromotionPage() {
       rooms.filter(
         (room) =>
           String(room.academicYear?._id || room.academicYear) ===
-            form.toAcademicYearId && room.isActive !== false,
+            form.toAcademicYearId &&
+          room.isActive !== false &&
+          (!assignedClassroomIds || assignedClassroomIds.has(String(room._id))),
       ),
-    [rooms, form.toAcademicYearId],
+    [rooms, form.toAcademicYearId, assignedClassroomIds],
   );
 
   const selectedRows = useMemo(
@@ -188,22 +209,18 @@ export default function PromotionPage() {
       <div className="page-heading">
         <div>
           <p className="eyebrow">Academic progression</p>
-          <h1>
-            <ArrowUpFromLine
-              size={22}
-              style={{
-                marginRight: 10,
-                verticalAlign: -3,
-                color: "var(--brand)",
-              }}
-              aria-hidden="true"
-            />
-            Promote Students
-          </h1>
+          <h1><ArrowUpFromLine size={22} style={{ marginRight: 10, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />Promote Students</h1>
           <p>
             Move selected active enrollments to a new academic year and
             classroom while preserving enrollment history.
           </p>
+          {isTeacher && (
+            <p style={{ marginTop: 6 }}>
+              You can only promote students into a classroom you're the
+              assigned class teacher for — this list shows only your
+              assigned classrooms.
+            </p>
+          )}
         </div>
       </div>
 
@@ -213,9 +230,7 @@ export default function PromotionPage() {
       <section className="card">
         <form className="student-form" onSubmit={submit}>
           <div>
-            <label className="form-field-label" htmlFor="pp-source-year">
-              Source Academic Year
-            </label>
+            <label className="form-field-label" htmlFor="pp-source-year">Source Academic Year</label>
             <select
               id="pp-source-year"
               value={form.fromAcademicYearId}
@@ -236,9 +251,7 @@ export default function PromotionPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-source-room">
-              Source Classroom
-            </label>
+            <label className="form-field-label" htmlFor="pp-source-room">Source Classroom</label>
             <select
               id="pp-source-room"
               value={sourceClassroom}
@@ -253,20 +266,21 @@ export default function PromotionPage() {
               ))}
             </select>
           </div>
-          <div className="form-submit-field">
+          <div>
+            <label className="form-field-label" htmlFor="pp-load">&nbsp;</label>
             <button
+              id="pp-load"
               type="button"
               className="button button-secondary"
               onClick={loadSource}
               disabled={loading || !form.fromAcademicYearId}
+              style={{ width: "100%" }}
             >
               {loading ? "Loading..." : "Load Students"}
             </button>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-dest-year">
-              Destination Academic Year
-            </label>
+            <label className="form-field-label" htmlFor="pp-dest-year">Destination Academic Year</label>
             <select
               id="pp-dest-year"
               value={form.toAcademicYearId}
@@ -290,9 +304,7 @@ export default function PromotionPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-dest-room">
-              Destination Classroom
-            </label>
+            <label className="form-field-label" htmlFor="pp-dest-room">Destination Classroom</label>
             <select
               id="pp-dest-room"
               value={form.toClassroomId}
@@ -316,9 +328,7 @@ export default function PromotionPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="pp-submit">
-              &nbsp;
-            </label>
+            <label className="form-field-label" htmlFor="pp-submit">&nbsp;</label>
             <button
               id="pp-submit"
               type="submit"

@@ -20,6 +20,12 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
     isActive: { type: Boolean, default: true, index: true },
+    // Lets an admin grant a teacher every permission a staff account has,
+    // without changing their role — the teacher keeps their teacher-only
+    // access (attendance, teacher-scoped promotion) *plus* staff access,
+    // rather than losing one for the other. Only meaningful for teachers;
+    // ignored for admin/staff accounts.
+    hasStaffPrivileges: { type: Boolean, default: false },
     lastLoginAt: { type: Date, default: null },
     failedLoginAttempts: { type: Number, default: 0 },
     lockedUntil: { type: Date, default: null },

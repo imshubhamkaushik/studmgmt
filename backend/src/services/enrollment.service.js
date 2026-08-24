@@ -5,7 +5,7 @@ import { AcademicYear } from "../models/academic-year.model.js";
 import { Classroom } from "../models/classroom.model.js";
 import { AppError } from "../utils/AppError.js";
 import { writeAudit } from "./audit.service.js";
-import { applyTeacherEnrollmentScope } from "./teacher-access.service.js";
+import { applyTeacherEnrollmentScope, getAssignedClassroomIds } from "./teacher-access.service.js";
 
 const ensureIds = (ids) => {
   if (!Array.isArray(ids) || !ids.length || ids.length > 200)
@@ -143,6 +143,7 @@ export const promoteStudents = async (
     rollNumbers = {},
   },
   requestId = null,
+  user = null,
 ) => {
   ensureIds(studentIds);
   if (
@@ -171,6 +172,24 @@ export const promoteStudents = async (
       "Every student must have an active enrollment in the source academic year.",
       400,
     );
+  
+  if (user?.role === "teacher") {
+    const assignedIds = new Set(
+      (await getAssignedClassroomIds(user)).map(String),
+    );
+    const sourceClassroomIds = new Set(
+      source.map((enrollment) => String(enrollment.classroom)),
+    );
+    const isFullyAssigned =
+      assignedIds.has(String(toClassroomId)) &&
+      [...sourceClassroomIds].every((id) => assignedIds.has(id));
+    
+    if (!isFullyAssigned)
+      throw new AppError(
+        "You can only promote students from and into a classroom you are the assigned class teacher for.",
+        403,
+      );
+  }
   
   const existing = await Enrollment.countDocuments({
     student: { $in: studentIds },

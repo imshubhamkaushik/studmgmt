@@ -8,6 +8,7 @@ import {
   applyTeacherStudentScope,
   assertTeacherStudentAccess,
 } from "./teacher-access.service.js";
+import { provisionPortalAccounts } from "./portal-provisioning.service.js";
 
 const SORTABLE_FIELDS = new Set([
   "studentId",
@@ -110,6 +111,8 @@ export const createStudent = async (studentData, requestId = null) => {
   const studentId = await generateStudentId();
   
   const student = await Student.create({ ...studentData, studentId });
+  
+  await provisionPortalAccounts(student);
   
   await writeAudit({
     entityType: "student",

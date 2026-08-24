@@ -82,7 +82,17 @@ export function AuthProvider({ children }) {
       login,
       logout,
       isAuthenticated: Boolean(user && getAccessToken()),
-      hasRole: (...roles) => roles.includes(user?.role),
+      // Mirrors the backend's authorize(): a teacher granted staff
+      // privileges satisfies any check that accepts "staff", on top of
+      // their normal teacher access — without their role actually
+      // changing to "staff".
+      hasRole: (...roles) => {
+        if (!user) return false;
+        if (roles.includes(user.role)) return true;
+        if (user.role === "teacher" && user.hasStaffPrivileges && roles.includes("staff"))
+          return true;
+        return false;
+      },
     }),
     [user, loading, login, logout],
   );

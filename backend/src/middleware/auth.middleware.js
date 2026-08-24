@@ -19,8 +19,15 @@ export async function authenticate(req, res, next) {
 
     const payload = verifyAccessToken(header.slice(7), secret);
 
+    // A portal (student/guardian) token is signed with the same secret by
+    // design, so it would otherwise pass signature verification here too.
+    // Reject it explicitly rather than relying only on the User lookup
+    // below incidentally failing (Student/Guardian ids live in different
+    // collections, but an explicit check is the real boundary).
+    if (payload.actorType) throw new AppError("Invalid or expired session.", 401);
+
     const user = await User.findById(payload.sub)
-      .select("_id email role name isActive")
+      .select("_id email role name isActive hasStaffPrivileges")
       .lean();
 
     if (!user?.isActive) throw new AppError("Your account is inactive or no longer available.", 401);
@@ -30,6 +37,7 @@ export async function authenticate(req, res, next) {
       role: user.role,
       email: user.email,
       name: user.name,
+      hasStaffPrivileges: Boolean(user.hasStaffPrivileges),
     };
 
     setRequestActor(req.user);
@@ -48,7 +56,12 @@ export function authorize(...roles) {
   return (req, res, next) => {
     if (!req.user)
       return next(new AppError("Authentication is required.", 401));
-    if (!roles.includes(req.user.role))
+
+    const effectiveRoles = [req.user.role];
+    if (req.user.role === "teacher" && req.user.hasStaffPrivileges)
+      effectiveRoles.push("staff");
+
+    if (!effectiveRoles.some((role) => roles.includes(role)))
       return next(
         new AppError("You do not have permission to perform this action.", 403),
       );

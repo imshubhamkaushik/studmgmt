@@ -46,7 +46,7 @@ export async function assignTeacher(
   
   return row;
 }
-export async function listAssignments(query = {}) {
+export async function listAssignments(query = {}, user = null) {
   const f = {};
   
   if (query.teacherId) f.teacher = query.teacherId;
@@ -54,6 +54,11 @@ export async function listAssignments(query = {}) {
   if (query.classroomId) f.classroom = query.classroomId;
   
   if (query.activeOnly === "true") f.isActive = true;
+  
+  // Teachers can see their own assignments (useful for e.g. the
+  // Promotions page to know which classrooms they can act on), but not
+  // everyone else's — only admin/staff get the unrestricted list.
+  if (user?.role === "teacher") f.teacher = user.sub;
   
   return Assignment.find(f)
     .populate("teacher", "name email role")

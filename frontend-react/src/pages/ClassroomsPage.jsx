@@ -42,9 +42,7 @@ export default function ClassroomsPage() {
             return active ? { ...current, academicYear: active._id } : current;
           });
         })
-        .catch((e) =>
-          setError(getApiErrorMessage(e, "Unable to load classrooms.")),
-        ),
+        .catch((e) => setError(getApiErrorMessage(e, "Unable to load classrooms."))),
     [],
   );
   useEffect(() => {
@@ -87,10 +85,7 @@ export default function ClassroomsPage() {
       setConfirmGenerate(false);
       load();
     } catch (err) {
-      show(
-        getApiErrorMessage(err, "Unable to generate default classrooms."),
-        "error",
-      );
+      show(getApiErrorMessage(err, "Unable to generate default classrooms."), "error");
     } finally {
       setGenerating(false);
     }
@@ -108,18 +103,7 @@ export default function ClassroomsPage() {
       <section className="form-card">
         <div className="section-heading">
           <div>
-            <h2>
-              <School
-                size={16}
-                style={{
-                  marginRight: 8,
-                  verticalAlign: -3,
-                  color: "var(--brand)",
-                }}
-                aria-hidden="true"
-              />
-              New Classroom
-            </h2>
+            <h2><School size={16} style={{ marginRight: 8, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />New Classroom</h2>
             <p>Add one classroom at a time, or generate a full set below.</p>
           </div>
           <button
@@ -127,9 +111,7 @@ export default function ClassroomsPage() {
             className="button button-secondary"
             onClick={() => setConfirmGenerate(true)}
             disabled={!form.academicYear}
-            title={
-              !form.academicYear ? "Select an academic year first" : undefined
-            }
+            title={!form.academicYear ? "Select an academic year first" : undefined}
           >
             <Layers size={15} aria-hidden="true" />
             Generate Default Classes
@@ -138,9 +120,7 @@ export default function ClassroomsPage() {
         {error && <div className="inline-error">{error}</div>}
         <form className="student-form" onSubmit={submit}>
           <div>
-            <label className="form-field-label" htmlFor="cr-class">
-              Class
-            </label>
+            <label className="form-field-label" htmlFor="cr-class">Class</label>
             <input
               id="cr-class"
               placeholder="e.g. 10"
@@ -149,9 +129,7 @@ export default function ClassroomsPage() {
             />
           </div>
           <div>
-            <label className="form-field-label" htmlFor="cr-section">
-              Section
-            </label>
+            <label className="form-field-label" htmlFor="cr-section">Section</label>
             <input
               id="cr-section"
               placeholder="e.g. A"
@@ -160,15 +138,11 @@ export default function ClassroomsPage() {
             />
           </div>
           <div>
-            <label className="form-field-label" htmlFor="cr-year">
-              Academic Year
-            </label>
+            <label className="form-field-label" htmlFor="cr-year">Academic Year</label>
             <select
               id="cr-year"
               value={form.academicYear}
-              onChange={(e) =>
-                setForm({ ...form, academicYear: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, academicYear: e.target.value })}
             >
               <option value="">Select academic year</option>
               {years.map((y) => (
@@ -179,9 +153,7 @@ export default function ClassroomsPage() {
             </select>
           </div>
           <div>
-            <label className="form-field-label" htmlFor="cr-capacity">
-              Capacity (optional)
-            </label>
+            <label className="form-field-label" htmlFor="cr-capacity">Capacity (optional)</label>
             <input
               id="cr-capacity"
               type="number"
@@ -192,21 +164,11 @@ export default function ClassroomsPage() {
             />
           </div>
           <div>
-            <div>
-              <label className="form-field-label" htmlFor="cr-submit">
-                &nbsp;
-              </label>
-
-              <button
-                id="cr-submit"
-                type="submit"
-                className="button button-primary"
-                style={{ width: "100%" }}
-              >
-                <PlusCircle size={15} aria-hidden="true" />
-                Create Classroom
-              </button>
-            </div>
+            <label className="form-field-label" htmlFor="cr-submit">&nbsp;</label>
+            <button id="cr-submit" type="submit" className="button button-primary" style={{ width: "100%" }}>
+              <PlusCircle size={15} aria-hidden="true" />
+              Create Classroom
+            </button>
           </div>
         </form>
       </section>
@@ -214,16 +176,11 @@ export default function ClassroomsPage() {
         <div className="section-heading">
           <div>
             <h2>All Classrooms</h2>
-            <p>
-              {rooms?.length ?? 0} classroom{rooms?.length === 1 ? "" : "s"}{" "}
-              configured.
-            </p>
+            <p>{rooms?.length ?? 0} classroom{rooms?.length === 1 ? "" : "s"} configured.</p>
           </div>
           {rooms && rooms.length > 6 && (
             <div className="search-field" style={{ maxWidth: 260 }}>
-              <label htmlFor="classroom-search" className="sr-only">
-                Search classrooms
-              </label>
+              <label htmlFor="classroom-search" className="sr-only">Search classrooms</label>
               <Search size={15} aria-hidden="true" />
               <input
                 id="classroom-search"
@@ -237,9 +194,7 @@ export default function ClassroomsPage() {
         </div>
         {rooms === null ? (
           <div className="skeleton-rows">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div className="skeleton" key={i} />
-            ))}
+            {Array.from({ length: 3 }).map((_, i) => <div className="skeleton" key={i} />)}
           </div>
         ) : rooms.length === 0 ? (
           <EmptyState
@@ -270,24 +225,12 @@ export default function ClassroomsPage() {
                   const full = r.capacity && r.studentCount >= r.capacity;
                   return (
                     <tr key={r._id}>
-                      <td>
-                        <strong>{r.className}</strong>
-                      </td>
+                      <td><strong>{r.className}</strong></td>
                       <td>{r.section}</td>
                       <td>{r.academicYear?.name}</td>
                       <td>{r.capacity ?? "—"}</td>
                       <td>
-                        <span
-                          className={full ? "status-badge" : ""}
-                          style={
-                            full
-                              ? {
-                                  background: "var(--warning-soft)",
-                                  color: "var(--warning)",
-                                }
-                              : undefined
-                          }
-                        >
+                        <span className={full ? "status-badge" : ""} style={full ? { background: "var(--warning-soft)", color: "var(--warning)" } : undefined}>
                           {r.studentCount}
                           {r.capacity ? ` / ${r.capacity}` : ""}
                         </span>
@@ -309,31 +252,20 @@ export default function ClassroomsPage() {
       >
         <div className="delete-modal-content">
           <p>
-            This creates Classes 1–12, each with Sections A, B, and C (36
-            total), for{" "}
-            <strong>
-              {selectedYear?.name || "the selected academic year"}
-            </strong>
-            .
+            This creates Classes 1–12, each with Sections A, B, and C
+            (36 total), for <strong>{selectedYear?.name || "the selected academic year"}</strong>.
           </p>
           <p className="warning-text">
-            Any class/section combination that already exists for this year will
-            be skipped — nothing gets duplicated or overwritten. You can still
-            add non-standard sections (like a 4th section) manually afterward.
+            Any class/section combination that already exists for this year
+            will be skipped — nothing gets duplicated or overwritten. You can
+            still add non-standard sections (like a 4th section) manually
+            afterward.
           </p>
           <div className="modal-actions">
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmGenerate(false)}
-              disabled={generating}
-            >
+            <Button variant="secondary" onClick={() => setConfirmGenerate(false)} disabled={generating}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              loading={generating}
-              onClick={runGenerateDefaults}
-            >
+            <Button variant="primary" loading={generating} onClick={runGenerateDefaults}>
               Generate 36 Classrooms
             </Button>
           </div>

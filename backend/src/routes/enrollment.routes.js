@@ -6,6 +6,6 @@ const r = Router();
 
 r.get("/", c.list);
 r.post("/", authorize("admin", "staff"), c.create);
-r.post("/promote", authorize("admin"), c.promote);
+r.post("/promote", authorize("admin", "teacher"), c.promote);
 
 export default r;

@@ -206,17 +206,12 @@ export default function AttendancePage() {
                 {className}-{section}
               </h2>
               <p>
-                {rowFilter
-                  ? `${visibleStudents.length} of ${students.length}`
-                  : students.length}{" "}
-                active students · {date}
+                {rowFilter ? `${visibleStudents.length} of ${students.length}` : students.length} active students · {date}
               </p>
             </div>
             {students.length > 8 && (
               <div className="search-field" style={{ maxWidth: 220 }}>
-                <label htmlFor="attendance-row-search" className="sr-only">
-                  Filter students
-                </label>
+                <label htmlFor="attendance-row-search" className="sr-only">Filter students</label>
                 <Search size={15} aria-hidden="true" />
                 <input
                   id="attendance-row-search"
@@ -244,7 +239,6 @@ export default function AttendancePage() {
               </button>
               <button
                 className="button button-primary"
-                type="button"
                 onClick={save}
                 disabled={mark.isPending}
               >
@@ -265,13 +259,7 @@ export default function AttendancePage() {
           )}
           <div className="attendance-table">
             {visibleStudents.length === 0 ? (
-              <p
-                style={{
-                  padding: "20px 4px",
-                  color: "var(--muted)",
-                  fontSize: 13.5,
-                }}
-              >
+              <p style={{ padding: "20px 4px", color: "var(--muted)", fontSize: 13.5 }}>
                 No students match "{rowFilter}".
               </p>
             ) : (
