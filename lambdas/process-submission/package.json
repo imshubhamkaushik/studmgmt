@@ -1,0 +1,15 @@
+{
+  "name": "studmgmt-process-submission",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Validates an uploaded assignment submission file (size/type) after S3 accepts it, and queues the result for the EKS-hosted backend to record.",
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.687.0",
+    "@aws-sdk/client-sqs": "^3.687.0",
+    "@opentelemetry/api": "^1.9.0"
+  }
+}

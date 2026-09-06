@@ -1,0 +1,50 @@
+# Reuses the exact same image as the backend API Deployment — same
+# Dockerfile, same dependencies, just started with a different command.
+# Building a second image for this would mean two Dockerfiles that need
+# to be kept in sync for no real benefit.
+#
+# No liveness/readiness probes: this isn't an HTTP server, and
+# runWorker()'s crash handler calls process.exit(1) on an unrecoverable
+# error, which is enough for Kubernetes' default pod restart behavior to
+# recover it — an exec probe here would just be re-implementing that.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: import-worker
+  namespace: studmgmt
+spec:
+  # Unlike the API server, this can scale freely — it touches no PVC, and
+  # multiple replicas safely share the SQS queue (each message is only
+  # delivered to one consumer at a time within the visibility timeout).
+  replicas: 2
+  selector:
+    matchLabels: { app: import-worker }
+  template:
+    metadata:
+      labels: { app: import-worker }
+    spec:
+      serviceAccountName: import-worker-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: import-worker
+          image: REPLACE_WITH_ECR_BACKEND_IMAGE:TAG # same image as k8s/04-backend-deployment.yaml
+          command: ["node", "--import", "./src/telemetry.js", "src/workers/import-consumer.js"]
+          envFrom:
+            - configMapRef: { name: import-worker-config }
+            - secretRef: { name: backend-secret } # for MONGODB_URI — see terraform/iam.tf's comment on this
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+      volumes:
+        - name: tmp
+          emptyDir: {}

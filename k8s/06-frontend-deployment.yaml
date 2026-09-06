@@ -1,0 +1,40 @@
+# Left simpler than the backend deliberately: nginx:1.27-alpine runs as
+# root by default (it needs to bind port 80 and write its pid/cache dirs),
+# so runAsNonRoot / readOnlyRootFilesystem aren't applied here without
+# also switching to nginxinc/nginx-unprivileged and reconfiguring nginx's
+# cache paths — a reasonable follow-up, not done here to avoid claiming
+# hardening that wasn't actually implemented.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: studmgmt
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: frontend }
+  template:
+    metadata:
+      labels: { app: frontend }
+    spec:
+      containers:
+        - name: frontend
+          # Replaced by CI with the real ECR image + tag on each deploy.
+          # Note VITE_API_BASE_URL is baked in at image build time (see
+          # frontend-react/Dockerfile), not read at pod runtime — the
+          # Ingress hostname needs to be stable and known before this
+          # image is built.
+          image: REPLACE_WITH_ECR_FRONTEND_IMAGE:TAG
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: "100m", memory: "64Mi" }
+            limits: { cpu: "500m", memory: "128Mi" }
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 10
+            periodSeconds: 20

@@ -1,10 +1,17 @@
 import { MarkEntry } from "../models/mark-entry.model.js";
 import { Exam } from "../models/exam.model.js";
-import { GradingTerm } from "../models/grading-term.model.js";
 import { Enrollment } from "../models/enrollment.model.js";
 import { AppError } from "../utils/AppError.js";
 import { writeAudit } from "./audit.service.js";
 import { getAssignedClassroomIds } from "./teacher-access.service.js";
+import { notifyStudent } from "./notification.service.js";
+import { maybeAutoGenerateReportCards } from "./report-card.service.js";
+
+// Grade computation lives in its own module now — report-card.service.js
+// needs it too, and this file needing to call *into* report-card.service.js
+// (below, to auto-generate report cards once a term's grading is complete)
+// would otherwise create a circular import between the two.
+export { computeSubjectGrade, computeReportCard } from "./grade-calculation.service.js";
 
 async function assertExamAccess(exam, user) {
   const assignedIds = await getAssignedClassroomIds(user);
@@ -87,56 +94,25 @@ export const bulkUpsertMarks = async (examId, entries, user, requestId) => {
     requestId,
   });
 
-  return results;
-};
+  // Best-effort — a notification failure should never roll back marks
+  // that were already saved successfully.
+  await Promise.allSettled(
+    results.map((record) =>
+      notifyStudent(record.student, {
+        type: "grade_posted",
+        title: "New grade posted",
+        body: `A new grade was recorded for ${exam.name}.`,
+      }),
+    ),
+  );
 
-// The weighted grade computation: for each grading term in the academic
-// year, find the student's exam for this subject in that term, take their
-// percentage, and combine the terms weighted by each term's weightPercent.
-// A term the student has no exam/mark for yet is simply excluded — the
-// result reflects "graded so far", not a zero for ungraded work.
-export const computeSubjectGrade = async (studentId, subjectId, academicYearId) => {
-  const terms = await GradingTerm.find({ academicYear: academicYearId, isArchived: { $ne: true } }).lean();
-  if (!terms.length) return { percent: null, breakdown: [] };
+  // Awaited rather than fire-and-forget: for a classroom-sized batch this
+  // adds real latency to the response, but it keeps the trigger
+  // deterministic and testable. This exact block — "generate N PDFs and
+  // notify N people, synchronously, inside a request handler" — is the
+  // piece that becomes an EventBridge + Lambda hand-off once this app
+  // moves onto AWS; for now, correctness wins over shaving milliseconds.
+  await maybeAutoGenerateReportCards(exam);
 
-  const exams = await Exam.find({
-    academicYear: academicYearId,
-    subject: subjectId,
-    gradingTerm: { $in: terms.map((t) => t._id) },
-    isArchived: { $ne: true },
-  }).lean();
-
-  const examIds = exams.map((e) => e._id);
-  const marks = await MarkEntry.find({ exam: { $in: examIds }, student: studentId }).lean();
-  const markByExam = new Map(marks.map((m) => [String(m.exam), m]));
-
-  const breakdown = [];
-  let weightedSum = 0;
-  let weightUsed = 0;
-
-  for (const term of terms) {
-    const exam = exams.find((e) => String(e.gradingTerm) === String(term._id));
-    if (!exam) continue;
-    const mark = markByExam.get(String(exam._id));
-    if (!mark || mark.isAbsent || mark.marksObtained == null) {
-      breakdown.push({ term: term.name, weightPercent: term.weightPercent, examPercent: null, status: mark?.isAbsent ? "absent" : "not entered" });
-      continue;
-    }
-    const examPercent = (mark.marksObtained / exam.maxMarks) * 100;
-    breakdown.push({ term: term.name, weightPercent: term.weightPercent, examPercent: Math.round(examPercent * 100) / 100, status: "graded" });
-    weightedSum += examPercent * term.weightPercent;
-    weightUsed += term.weightPercent;
-  }
-
-  const percent = weightUsed > 0 ? Math.round((weightedSum / weightUsed) * 100) / 100 : null;
-  return { percent, weightGraded: weightUsed, weightTotal: terms.reduce((s, t) => s + t.weightPercent, 0), breakdown };
-};
-
-export const computeReportCard = async (studentId, academicYearId, subjects) => {
-  const results = [];
-  for (const subject of subjects) {
-    const grade = await computeSubjectGrade(studentId, subject._id, academicYearId);
-    results.push({ subject: { _id: subject._id, name: subject.name, code: subject.code }, ...grade });
-  }
   return results;
 };

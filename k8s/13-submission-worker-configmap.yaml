@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: submission-worker-config
+  namespace: studmgmt
+data:
+  NODE_ENV: "production"
+  # From terraform output submission_queue_url after `terraform apply`.
+  SUBMISSION_QUEUE_URL: "https://sqs.<region>.amazonaws.com/<account_id>/studmgmt-submission-queue"
+  OTEL_SERVICE_NAME: "studmgmt-submission-worker"

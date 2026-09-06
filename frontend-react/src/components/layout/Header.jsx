@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { Menu, Search } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 const getPageTitle = (pathname) => {
   const pages = [
@@ -13,6 +14,11 @@ const getPageTitle = (pathname) => {
     ["/promotions", "Promotions", "Move students safely between academic years."],
     ["/users", "Users & Roles", "Manage access for administrators, staff, and teachers."],
     ["/teacher-assignments", "Teacher Assignments", "Assign teachers to the classrooms they manage."],
+    ["/assignments", "Assignments", "Create assignments and track student submissions."],
+    ["/academic-setup", "Academic Setup", "Manage subjects and grading terms."],
+    ["/exams", "Exams", "Create exams per classroom and grading term."],
+    ["/mark-entry", "Mark Entry", "Enter and save student marks for an exam."],
+    ["/report-cards", "Report Cards", "Generate and download student report cards."],
   ];
 
   if (pathname.endsWith("/edit"))
@@ -53,6 +59,8 @@ export default function Header({ onMenuClick, onSearchClick }) {
         <span>Search...</span>
         <kbd>{isMac ? "⌘K" : "Ctrl K"}</kbd>
       </button>
+
+      <NotificationBell />
     </header>
   );
 }

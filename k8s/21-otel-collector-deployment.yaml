@@ -1,0 +1,68 @@
+# otel/opentelemetry-collector-contrib, not the core image — the awsxray
+# exporter, prometheusremotewrite exporter, and sigv4auth extension used
+# in 19-otel-collector-configmap.yaml are all contrib-only components.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: studmgmt
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: otel-collector }
+  template:
+    metadata:
+      labels: { app: otel-collector }
+    spec:
+      serviceAccountName: otel-collector-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001 # the otel-collector image's built-in non-root user
+        fsGroup: 10001
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.113.0
+          args: ["--config=/etc/otel/collector.yaml"]
+          env:
+            # From terraform.tfvars' aws_region and output amp_remote_write_endpoint.
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: AMP_REMOTE_WRITE_ENDPOINT
+              value: "https://aps-workspaces.us-east-1.amazonaws.com/workspaces/<WORKSPACE_ID>/api/v1/remote_write"
+          ports:
+            - containerPort: 4317
+              name: otlp-grpc
+            - containerPort: 4318
+              name: otlp-http
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - name: config
+              mountPath: /etc/otel
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests: { cpu: "200m", memory: "256Mi" }
+            limits: { cpu: "1", memory: "512Mi" }
+      volumes:
+        - name: config
+          configMap: { name: otel-collector-config }
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: studmgmt
+spec:
+  selector: { app: otel-collector }
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318

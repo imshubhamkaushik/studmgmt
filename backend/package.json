@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node --import ./src/telemetry.js src/server.js",
     "dev": "nodemon src/server.js",
     "migrate:student-ids": "node src/scripts/migrate-student-ids.js",
     "test": "node --test test/*.test.js",
@@ -21,13 +21,34 @@
   ],
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.687.0",
+    "@aws-sdk/client-eventbridge": "^3.687.0",
+    "@aws-sdk/client-s3": "^3.687.0",
+    "@aws-sdk/client-sns": "^3.687.0",
+    "@aws-sdk/client-sqs": "^3.687.0",
+    "@aws-sdk/lib-dynamodb": "^3.687.0",
+    "@aws-sdk/s3-presigned-post": "^3.687.0",
+    "@aws-sdk/s3-request-presigner": "^3.687.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.80.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.222.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
+    "@opentelemetry/resources": "^2.11.0",
+    "@opentelemetry/sdk-metrics": "^2.11.0",
+    "@opentelemetry/sdk-node": "^0.222.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2",
+    "express": "^4.22.2",
     "mongoose": "^8.9.5",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "pdfkit": "^0.15.0",
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
+  },
+  "allowScripts": {
+    "protobufjs@7.6.6": true
   }
 }

@@ -24,6 +24,11 @@ const EnrollmentsPage = lazy(() => import("./pages/EnrollmentsPage"));
 const PromotionPage = lazy(() => import("./pages/PromotionPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
 const TeacherAssignmentsPage = lazy(() => import("./pages/TeacherAssignmentsPage"));
+const AssignmentsPage = lazy(() => import("./pages/AssignmentsPage"));
+const AcademicSetupPage = lazy(() => import("./pages/AcademicSetupPage"));
+const ExamsPage = lazy(() => import("./pages/ExamsPage"));
+const MarkEntryPage = lazy(() => import("./pages/MarkEntryPage"));
+const ReportCardsPage = lazy(() => import("./pages/ReportCardsPage"));
 
 function RouteFallback() {
   return (
@@ -100,6 +105,46 @@ export default function App() {
             element={
               <ProtectedRoute roles={["admin", "staff"]}>
                 <TeacherAssignmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assignments"
+            element={
+              <ProtectedRoute roles={["admin", "staff", "teacher"]}>
+                <AssignmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/academic-setup"
+            element={
+              <ProtectedRoute roles={["admin", "staff"]}>
+                <AcademicSetupPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/exams"
+            element={
+              <ProtectedRoute roles={["admin", "staff", "teacher"]}>
+                <ExamsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mark-entry"
+            element={
+              <ProtectedRoute roles={["admin", "staff", "teacher"]}>
+                <MarkEntryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/report-cards"
+            element={
+              <ProtectedRoute roles={["admin", "staff", "teacher"]}>
+                <ReportCardsPage />
               </ProtectedRoute>
             }
           />

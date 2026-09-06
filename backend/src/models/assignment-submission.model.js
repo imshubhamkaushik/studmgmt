@@ -19,13 +19,22 @@ const assignmentSubmissionSchema = new mongoose.Schema(
       storedPath: { type: String, required: true },
       mimeType: { type: String, default: null },
       sizeBytes: { type: Number, default: null },
+      // "local" (existing multer disk-storage flow, unchanged) or "s3"
+      // (new presigned-upload flow — storedPath holds the S3 key rather
+      // than a filesystem path when this is "s3"). Old rows implicitly
+      // default to "local" via the schema default, no migration needed.
+      storageType: { type: String, enum: ["local", "s3"], default: "local" },
     },
     submittedAt: { type: Date, default: Date.now },
     status: {
       type: String,
-      enum: ["submitted", "late", "graded"],
+      // pending_upload: submission row exists, presigned upload issued,
+      // file not yet confirmed by process-submission. rejected: the
+      // uploaded file failed validation (size/type) after the fact.
+      enum: ["pending_upload", "submitted", "late", "rejected", "graded"],
       default: "submitted",
     },
+    rejectionReason: { type: String, default: null },
     marksObtained: { type: Number, default: null, min: 0 },
     feedback: { type: String, trim: true, maxlength: 2000, default: "" },
     gradedBy: {

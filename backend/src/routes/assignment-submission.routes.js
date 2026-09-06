@@ -17,6 +17,11 @@ r.post(
   uploadSingle("submissions", "file"),
   c.submit,
 );
+r.post(
+  "/assignment/:assignmentId/upload-url",
+  authorize("admin", "staff", "teacher"),
+  c.getUploadUrl,
+);
 r.patch("/:id/grade", authorize("admin", "staff", "teacher"), validateObjectId(), c.grade);
 r.get("/:id/file", authorize("admin", "staff", "teacher"), validateObjectId(), c.downloadFile);
 

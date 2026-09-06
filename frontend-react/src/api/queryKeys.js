@@ -26,4 +26,13 @@ export const queryKeys = {
   audit: {
     recent: (limit) => ["audit", "recent", limit],
   },
+
+  importJobs: {
+    detail: (jobId) => ["importJobs", "detail", jobId],
+  },
+
+  notifications: {
+    list: (params) => ["notifications", "list", params],
+    unreadCount: () => ["notifications", "unreadCount"],
+  },
 };

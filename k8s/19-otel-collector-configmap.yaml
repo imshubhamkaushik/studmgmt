@@ -1,0 +1,58 @@
+# This is the "unified" part of unified observability: every EKS
+# workload (backend, all three workers) and every Lambda (via the ADOT
+# layer, see terraform/lambdas.tf) sends here. Traces go to X-Ray,
+# metrics go to AWS Managed Prometheus — AWS Managed Grafana then
+# queries both as data sources, so one dashboard can show a request's
+# full path across Lambda and EKS side by side (see
+# terraform/observability.tf for the AMP/AMG workspaces).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: studmgmt
+data:
+  collector.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch:
+        timeout: 5s
+      # Caps memory use if something upstream misbehaves and floods this
+      # collector — without this a bad deploy could OOM-kill the
+      # collector itself, taking observability down right when it's
+      # needed most.
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 400
+        spike_limit_mib: 100
+
+    exporters:
+      awsxray:
+        region: ${env:AWS_REGION}
+      prometheusremotewrite:
+        endpoint: ${env:AMP_REMOTE_WRITE_ENDPOINT}
+        auth:
+          authenticator: sigv4auth
+
+    extensions:
+      sigv4auth:
+        region: ${env:AWS_REGION}
+        service: aps
+
+    service:
+      extensions: [sigv4auth]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [awsxray]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheusremotewrite]

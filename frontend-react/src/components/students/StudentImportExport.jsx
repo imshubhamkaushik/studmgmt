@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Upload, Download, FileDown, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, Download, FileDown, CheckCircle2, AlertCircle, UploadCloud } from "lucide-react";
 import { exportStudents } from "../../api/students";
 import { useImportStudents } from "../../hooks/useStudents";
 import { getApiErrorMessage } from "../../utils/apiErrorMessage";
 import { useToast } from "../../hooks/useToast";
+import BackgroundImportModal from "./BackgroundImportModal";
 
 const parseCsvLine = (line) => {
   const values = [];
@@ -64,6 +65,7 @@ export default function StudentImportExport({ filters }) {
   const inputRef = useRef(null);
   const [error, setError] = useState(null);
   const [preview, setPreview] = useState([]);
+  const [backgroundImportOpen, setBackgroundImportOpen] = useState(false);
   const importMutation = useImportStudents();
 
   const { show } = useToast();
@@ -188,6 +190,16 @@ export default function StudentImportExport({ filters }) {
         <Upload size={14} aria-hidden="true" />
         Import CSV
       </button>
+      <button
+        type="button"
+        className="button button-secondary"
+        onClick={() => setBackgroundImportOpen(true)}
+        title="For large files — uploads and processes in the background"
+      >
+        <UploadCloud size={14} aria-hidden="true" />
+        Bulk Import
+      </button>
+      <BackgroundImportModal isOpen={backgroundImportOpen} onClose={() => setBackgroundImportOpen(false)} />
       <button
         type="button"
         className="button button-secondary"

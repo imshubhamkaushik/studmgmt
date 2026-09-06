@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: import-worker-config
+  namespace: studmgmt
+data:
+  NODE_ENV: "production"
+  # From terraform output import_queue_url / import_jobs_table_name /
+  # import_notifications_topic_arn after `terraform apply`.
+  IMPORT_QUEUE_URL: "https://sqs.<region>.amazonaws.com/<account_id>/studmgmt-import-queue"
+  JOBS_TABLE: "studmgmt-import-jobs"
+  IMPORT_NOTIFICATIONS_TOPIC_ARN: "arn:aws:sns:<region>:<account_id>:studmgmt-import-notifications"
+  OTEL_SERVICE_NAME: "studmgmt-import-worker"

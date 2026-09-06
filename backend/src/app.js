@@ -18,8 +18,14 @@ import markEntryRoutes from "./routes/mark-entry.routes.js";
 import timetableRoutes from "./routes/timetable.routes.js";
 import assignmentRoutes from "./routes/assignment.routes.js";
 import assignmentSubmissionRoutes from "./routes/assignment-submission.routes.js";
+import portalAssignmentSubmissionRoutes from "./routes/portal-assignment-submission.routes.js";
 import portalAuthRoutes from "./routes/portal-auth.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
+import reportCardRoutes from "./routes/report-card.routes.js";
+import portalReportCardRoutes from "./routes/portal-report-card.routes.js";
+import importJobRoutes from "./routes/import-job.routes.js";
 import { authenticate } from "./middleware/auth.middleware.js";
+import { authenticatePortal } from "./middleware/portal-auth.middleware.js";
 import { AppError } from "./utils/AppError.js";
 import { notFoundHandler } from "./middleware/not-found.middleware.js";
 import { errorHandler } from "./middleware/error.middleware.js";
@@ -102,6 +108,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/portal/auth", portalAuthRoutes);
 
 // All business APIs require authentication. Authorization is enforced by route modules.
+app.use("/api/v1/students/import-jobs", authenticate, importJobRoutes);
 app.use("/api/v1/students", authenticate, studentRoutes);
 app.use("/api/v1/dashboard", authenticate, dashboardRoutes);
 app.use("/api/v1/audit", authenticate, auditRoutes);
@@ -121,6 +128,16 @@ app.use("/api/v1/marks", authenticate, markEntryRoutes);
 app.use("/api/v1/timetable", authenticate, timetableRoutes);
 app.use("/api/v1/assignments", authenticate, assignmentRoutes);
 app.use("/api/v1/assignment-submissions", authenticate, assignmentSubmissionRoutes);
+app.use("/api/v1/notifications", authenticate, notificationRoutes);
+app.use("/api/v1/report-cards", authenticate, reportCardRoutes);
+
+// Portal-facing (students/guardians). notificationRoutes is intentionally
+// the same router mounted a second time — see the comment at the top of
+// that file for why one router safely serves both audiences.
+app.use("/api/v1/portal/notifications", authenticatePortal, notificationRoutes);
+app.use("/api/v1/portal/report-card", authenticatePortal, portalReportCardRoutes);
+app.use("/api/v1/portal/assignment-submissions", authenticatePortal, portalAssignmentSubmissionRoutes);
+
 app.use(notFoundHandler);
 app.use(errorHandler);
 
