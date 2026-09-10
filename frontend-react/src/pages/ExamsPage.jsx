@@ -76,14 +76,6 @@ export default function ExamsPage() {
 
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Grading</p>
-          <h1>Exams</h1>
-          <p>Create exams per classroom and grading term. Mark Entry uses these.</p>
-        </div>
-      </div>
-
       <section className="form-card">
         <div className="section-heading">
           <div>

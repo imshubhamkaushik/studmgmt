@@ -13,3 +13,8 @@ export const downloadGeneratedReportCard = (studentId, academicYearId) =>
   apiClient.get(`/report-cards/classroom/download/${studentId}/${academicYearId}`, {
     responseType: "blob",
   });
+
+export const downloadClassroomReportCardsZip = (classroomId, academicYearId) =>
+  apiClient.get(`/report-cards/classroom/download-zip/${classroomId}/${academicYearId}`, {
+    responseType: "blob",
+  });

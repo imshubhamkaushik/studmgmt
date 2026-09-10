@@ -91,3 +91,47 @@ export const getRecentActivity = (limit = 15) =>
     .sort({ createdAt: -1 })
     .limit(Math.min(Number(limit) || 15, 50))
     .lean();
+
+// Powers the admin-only audit dashboard — unlike getRecentActivity (fixed
+// small limit, no filters, used for a glanceable widget), this supports
+// filtering and pagination over the full log, since "who did what, when"
+// across the whole system is the actual point of an audit dashboard, not
+// just the last dozen events.
+export const listAuditLog = async (filters = {}) => {
+  const query = {};
+  if (filters.entityType) query.entityType = filters.entityType;
+  if (filters.action) query.action = filters.action;
+  if (filters.actorEmail) query.actorEmail = filters.actorEmail;
+  if (filters.dateFrom || filters.dateTo) {
+    query.createdAt = {};
+    if (filters.dateFrom) query.createdAt.$gte = new Date(filters.dateFrom);
+    if (filters.dateTo) query.createdAt.$lte = new Date(filters.dateTo);
+  }
+
+  const page = Math.max(Number(filters.page) || 1, 1);
+  const limit = Math.min(Math.max(Number(filters.limit) || 25, 1), 100);
+
+  const [items, total] = await Promise.all([
+    AuditLog.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    AuditLog.countDocuments(query),
+  ]);
+
+  return { items, total, page, limit, totalPages: Math.max(Math.ceil(total / limit), 1) };
+};
+
+// Distinct entityType/action/actorEmail values currently in the log —
+// used to populate the dashboard's filter dropdowns with only options
+// that would actually return results, rather than a hardcoded list that
+// drifts from what writeAudit callers actually pass.
+export const getAuditFilterOptions = async () => {
+  const [entityTypes, actions, actorEmails] = await Promise.all([
+    AuditLog.distinct("entityType"),
+    AuditLog.distinct("action"),
+    AuditLog.distinct("actorEmail", { actorEmail: { $ne: null } }),
+  ]);
+  return { entityTypes: entityTypes.sort(), actions: actions.sort(), actorEmails: actorEmails.sort() };
+};

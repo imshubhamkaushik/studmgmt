@@ -68,14 +68,6 @@ export default function AssignmentsPage() {
 
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Coursework</p>
-          <h1>Assignments</h1>
-          <p>Create assignments and review student submissions.</p>
-        </div>
-      </div>
-
       <section className="form-card">
         <div className="section-heading">
           <div>

@@ -1,6 +1,6 @@
 import Button from "./Button";
 
-export default function Pagination({ pagination, onPageChange }) {
+export default function Pagination({ pagination, onPageChange, itemLabel = "students", itemLabelSingular }) {
   if (!pagination) {
     return null;
   }
@@ -10,13 +10,14 @@ export default function Pagination({ pagination, onPageChange }) {
 
   const start = totalItems === 0 ? 0 : (page - 1) * limit + 1;
   const end = totalItems === 0 ? 0 : Math.min(page * limit, totalItems);
+  const singular = itemLabelSingular || itemLabel.replace(/s$/, "");
 
-  let summary = "No students";
+  let summary = `No ${itemLabel}`;
 
   if (totalItems > 0) {
-    const studentLabel = totalItems === 1 ? "student" : "students";
+    const label = totalItems === 1 ? singular : itemLabel;
 
-    summary = `Showing ${start}-${end} of ${totalItems} ${studentLabel}`;
+    summary = `Showing ${start}-${end} of ${totalItems} ${label}`;
   }
 
   return (

@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
-import { FileText, Download, Sparkles } from "lucide-react";
+import { FileText, Download, Sparkles, FolderDown } from "lucide-react";
 import { getAcademicYears } from "../api/academicYears";
 import { getClassrooms } from "../api/classrooms";
-import { generateClassroomReportCards, downloadGeneratedReportCard } from "../api/reportCards";
+import {
+  generateClassroomReportCards,
+  downloadGeneratedReportCard,
+  downloadClassroomReportCardsZip,
+} from "../api/reportCards";
 import EmptyState from "../components/common/EmptyState";
 import { getApiErrorMessage } from "../utils/apiErrorMessage";
 import { useToast } from "../hooks/useToast";
@@ -24,6 +28,7 @@ export default function ReportCardsPage() {
   const [generating, setGenerating] = useState(false);
   const [results, setResults] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadingZip, setDownloadingZip] = useState(false);
   const { show } = useToast();
 
   useEffect(() => {
@@ -61,16 +66,22 @@ export default function ReportCardsPage() {
     }
   };
 
+  const downloadAll = async () => {
+    setDownloadingZip(true);
+    try {
+      const blob = await downloadClassroomReportCardsZip(classroomId, academicYearId);
+      const room = classrooms.find((c) => c._id === classroomId);
+      const label = room ? `${room.className}-${room.section}` : classroomId;
+      triggerDownload(blob, `report-cards-${label}.zip`);
+    } catch (err) {
+      show(getApiErrorMessage(err, "Unable to download report cards."), "error");
+    } finally {
+      setDownloadingZip(false);
+    }
+  };
+
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Grading</p>
-          <h1>Report Cards</h1>
-          <p>Generate PDF report cards for a whole classroom at once. Students are notified automatically.</p>
-        </div>
-      </div>
-
       <section className="form-card">
         <div className="section-heading">
           <div>
@@ -113,6 +124,17 @@ export default function ReportCardsPage() {
               <h2>Generated</h2>
               <p>{results.length} report card{results.length === 1 ? "" : "s"} ready to download.</p>
             </div>
+            {results.length > 0 && (
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={downloadAll}
+                disabled={downloadingZip}
+              >
+                <FolderDown size={14} aria-hidden="true" />
+                {downloadingZip ? "Preparing ZIP…" : "Download All (ZIP)"}
+              </button>
+            )}
           </div>
           {results.length === 0 ? (
             <EmptyState icon={FileText} title="No active enrollments" message="This classroom has no active students for the selected academic year." />

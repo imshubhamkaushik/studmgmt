@@ -23,6 +23,16 @@ data:
   IMPORTS_BUCKET: "studmgmt-imports-<ACCOUNT_ID>"
   JOBS_TABLE: "studmgmt-import-jobs"
   # From terraform output submissions_bucket_name — needed by the
-  # assignment-submission upload-url and download endpoints.
+  # assignment-submission upload-url and download endpoints. Assignment
+  # attachments now use the same physical bucket under an "assignments/"
+  # prefix (see terraform/assignment-submissions.tf's backend IAM policy)
+  # — kept as its own env var, rather than reusing SUBMISSIONS_BUCKET
+  # directly in code, so each feature's config is self-documenting and the
+  # two can point at different buckets later without a code change.
   SUBMISSIONS_BUCKET: "studmgmt-submissions-<ACCOUNT_ID>"
+  ASSIGNMENTS_BUCKET: "studmgmt-submissions-<ACCOUNT_ID>"
+  # Generated report-card PDFs are still local-disk-backed (the
+  # backend-uploads PVC), not S3 — see report-card.service.js for why.
+  # REPORT_CARDS_BUCKET is not yet read anywhere; left unset intentionally
+  # until that migration happens.
   OTEL_SERVICE_NAME: "studmgmt-backend"

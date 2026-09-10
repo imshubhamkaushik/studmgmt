@@ -19,11 +19,11 @@ const assignmentSubmissionSchema = new mongoose.Schema(
       storedPath: { type: String, required: true },
       mimeType: { type: String, default: null },
       sizeBytes: { type: Number, default: null },
-      // "local" (existing multer disk-storage flow, unchanged) or "s3"
-      // (new presigned-upload flow — storedPath holds the S3 key rather
-      // than a filesystem path when this is "s3"). Old rows implicitly
-      // default to "local" via the schema default, no migration needed.
-      storageType: { type: String, enum: ["local", "s3"], default: "local" },
+      // "local" only ever applies to rows written before this migration —
+      // every submission flow (presigned client upload and the
+      // staff-recorded path alike) now writes to S3, so new rows default
+      // to "s3" rather than requiring every caller to say so explicitly.
+      storageType: { type: String, enum: ["local", "s3"], default: "s3" },
     },
     submittedAt: { type: Date, default: Date.now },
     status: {

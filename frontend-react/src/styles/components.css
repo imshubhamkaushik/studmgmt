@@ -64,11 +64,16 @@
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow-y: auto;
+  /* The sidebar itself no longer scrolls as one unit — only .sidebar-nav
+     does (see below). That keeps the brand mark pinned at the top and the
+     user-profile footer pinned at the bottom regardless of how many nav
+     links overflow the viewport. */
+  overflow: hidden;
   transition: transform 0.25s var(--ease);
   z-index: 40;
 }
 .app-brand {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -104,9 +109,29 @@
   display: none;
 }
 .sidebar-nav {
+  flex: 1;
+  /* min-height: 0 is what allows a flex child to actually shrink and
+     scroll inside a column flex container instead of stretching it. */
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 18px;
+  /* Pull scrollbar off the link content, and keep the brand/footer's own
+     horizontal padding visually consistent with the scrollable area. */
+  margin: 0 -4px;
+  padding: 4px 4px 8px;
+}
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
 }
 .sidebar-nav-group {
   display: flex;
@@ -156,8 +181,9 @@
   flex-shrink: 0;
 }
 .sidebar-footer {
+  flex-shrink: 0;
   position: relative;
-  margin-top: auto;
+  margin-top: 0;
   padding: 10px 4px 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -440,22 +466,36 @@
 .chart-donut-center {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
   text-align: center;
 }
+.chart-donut-center-inner {
+  /* Recharts' innerRadius on the Pie in DashboardPage.jsx is 48px, i.e. an
+     84px-diameter inner circle. Constraining the label to less than that
+     (rather than to the outer 150px wrapper) is what actually keeps the
+     text off the colored ring instead of just off the card edge. */
+  max-width: 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
 .chart-donut-center strong {
-  display: block;
-  font-size: 22px;
+  font-size: 21px;
+  line-height: 1.1;
   color: var(--ink);
   letter-spacing: -0.03em;
 }
 .chart-donut-center span {
-  font-size: 10.5px;
+  font-size: 9px;
+  line-height: 1.2;
   color: var(--muted-2);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .chart-legend {
   flex: 1;
@@ -603,6 +643,15 @@
   border-radius: 10px;
   background: #fff6f5;
   color: #b42318;
+  font-size: 13px;
+}
+.page-note {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--muted);
   font-size: 13px;
 }
 .inline-error strong {

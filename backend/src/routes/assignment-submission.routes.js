@@ -2,7 +2,7 @@ import { Router } from "express";
 import * as c from "../controllers/assignment-submission.controller.js";
 import { authorize } from "../middleware/auth.middleware.js";
 import { validateObjectId } from "../middleware/validate-object-id.middleware.js";
-import { uploadSingle } from "../middleware/upload.middleware.js";
+import { uploadMemory } from "../middleware/upload.middleware.js";
 
 const r = Router();
 
@@ -14,7 +14,7 @@ r.get(
 r.post(
   "/assignment/:assignmentId",
   authorize("admin", "staff", "teacher"),
-  uploadSingle("submissions", "file"),
+  uploadMemory("file"),
   c.submit,
 );
 r.post(

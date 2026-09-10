@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeftRight, History, Search } from "lucide-react";
+import { History, Search } from "lucide-react";
 import { getStudents } from "../api/students";
 import { getAcademicYears } from "../api/academicYears";
 import { getClassrooms } from "../api/classrooms";
@@ -77,16 +77,9 @@ export default function EnrollmentsPage() {
 
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Academic placement</p>
-          <h1><ArrowLeftRight size={22} style={{ marginRight: 10, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />Enrollments</h1>
-          <p>
-            Assign students to academic classrooms. To move students between
-            academic years, use the Promotions page.
-          </p>
-        </div>
-      </div>
+      <p className="page-note">
+        To move students between academic years, use the Promotions page.
+      </p>
       {error && <div className="inline-error">{error}</div>}
 
       <section className="card">

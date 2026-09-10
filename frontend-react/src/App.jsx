@@ -24,11 +24,15 @@ const EnrollmentsPage = lazy(() => import("./pages/EnrollmentsPage"));
 const PromotionPage = lazy(() => import("./pages/PromotionPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
 const TeacherAssignmentsPage = lazy(() => import("./pages/TeacherAssignmentsPage"));
+const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
+const PeriodAttendancePage = lazy(() => import("./pages/PeriodAttendancePage"));
+const AuditDashboardPage = lazy(() => import("./pages/AuditDashboardPage"));
 const AssignmentsPage = lazy(() => import("./pages/AssignmentsPage"));
 const AcademicSetupPage = lazy(() => import("./pages/AcademicSetupPage"));
 const ExamsPage = lazy(() => import("./pages/ExamsPage"));
 const MarkEntryPage = lazy(() => import("./pages/MarkEntryPage"));
 const ReportCardsPage = lazy(() => import("./pages/ReportCardsPage"));
+const PortalApp = lazy(() => import("./portal/PortalApp"));
 
 function RouteFallback() {
   return (
@@ -44,6 +48,7 @@ export default function App() {
     <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/portal/*" element={<PortalApp />} />
         <Route
           element={
             <ProtectedRoute>
@@ -113,6 +118,30 @@ export default function App() {
             element={
               <ProtectedRoute roles={["admin", "staff", "teacher"]}>
                 <AssignmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/announcements"
+            element={
+              <ProtectedRoute roles={["admin", "staff", "teacher"]}>
+                <AnnouncementsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/period-attendance"
+            element={
+              <ProtectedRoute roles={["admin", "staff", "teacher"]}>
+                <PeriodAttendancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-log"
+            element={
+              <ProtectedRoute roles={["admin"]}>
+                <AuditDashboardPage />
               </ProtectedRoute>
             }
           />

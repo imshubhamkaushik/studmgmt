@@ -2,8 +2,15 @@
 # node can attach it at a time. That's why the backend Deployment below is
 # pinned to a single replica for now: EFS (ReadWriteMany) would remove
 # that ceiling, but adding it before it's needed is premature complexity.
-# Moving assignment submissions / report cards to S3 (already planned)
-# removes the need for this volume entirely.
+#
+# Assignment attachments and staff-recorded submissions have already
+# moved to S3 (see backend/src/utils/s3-storage.js) and no longer touch
+# this volume. Generated report-card PDFs are the one thing still here —
+# deliberately not migrated yet because the integration test covering
+# them (report-card-auto-generate.integration.test.js) asserts a full
+# generate-then-download round trip, and this project's CI has no
+# S3/LocalStack mock to satisfy that without hitting real AWS. Once CI
+# has one, report cards can move too and this PVC can be deleted outright.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -15,4 +22,4 @@ spec:
   storageClassName: gp3
   resources:
     requests:
-      storage: 5Gi
+      storage: 1Gi

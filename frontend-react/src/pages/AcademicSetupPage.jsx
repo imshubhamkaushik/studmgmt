@@ -57,14 +57,6 @@ export default function AcademicSetupPage() {
 
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Academic structure</p>
-          <h1>Academic Setup</h1>
-          <p>Subjects and grading terms used across exams and report cards.</p>
-        </div>
-      </div>
-
       <section className="form-card">
         <div className="section-heading">
           <div>

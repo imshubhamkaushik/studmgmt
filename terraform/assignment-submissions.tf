@@ -259,13 +259,23 @@ resource "aws_iam_role_policy" "submission_worker" {
 }
 
 # --- Backend API server: needs to read/write the submissions bucket
-# directly (create presigned POSTs, presign downloads) ---
+# directly (create presigned POSTs, presign downloads). Also covers
+# teacher assignment attachments and generated report-card PDFs, which
+# used to live on local disk (behind an EBS-backed PersistentVolume) and
+# now live in this same bucket under their own prefixes — one storage
+# backend for every file this app handles, rather than local disk for
+# some and S3 for others. Prefix-scoping still keeps each feature's
+# blast radius separate even though they now share a bucket.
 
 data "aws_iam_policy_document" "backend_submissions_access" {
   statement {
-    effect    = "Allow"
-    actions   = ["s3:PutObject", "s3:GetObject"]
-    resources = ["${aws_s3_bucket.submissions.arn}/submissions/*"]
+    effect  = "Allow"
+    actions = ["s3:PutObject", "s3:GetObject"]
+    resources = [
+      "${aws_s3_bucket.submissions.arn}/submissions/*",
+      "${aws_s3_bucket.submissions.arn}/assignments/*",
+      "${aws_s3_bucket.submissions.arn}/report-cards/*",
+    ]
   }
 }
 

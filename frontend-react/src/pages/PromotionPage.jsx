@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpFromLine } from "lucide-react";
 import { getAcademicYears } from "../api/academicYears";
 import { getClassrooms } from "../api/classrooms";
 import { getEnrollments, promoteStudents } from "../api/enrollments";
@@ -206,23 +205,13 @@ export default function PromotionPage() {
 
   return (
     <main className="page">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Academic progression</p>
-          <h1><ArrowUpFromLine size={22} style={{ marginRight: 10, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />Promote Students</h1>
-          <p>
-            Move selected active enrollments to a new academic year and
-            classroom while preserving enrollment history.
-          </p>
-          {isTeacher && (
-            <p style={{ marginTop: 6 }}>
-              You can only promote students into a classroom you're the
-              assigned class teacher for — this list shows only your
-              assigned classrooms.
-            </p>
-          )}
-        </div>
-      </div>
+      {isTeacher && (
+        <p className="page-note">
+          You can only promote students into a classroom you&apos;re the
+          assigned class teacher for — this list shows only your assigned
+          classrooms.
+        </p>
+      )}
 
       {error && <div className="inline-error">{error}</div>}
       {message && <p className="import-success">{message}</p>}

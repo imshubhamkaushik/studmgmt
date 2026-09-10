@@ -18,6 +18,9 @@ import {
   ChevronsUpDown,
   LogOut,
   X,
+  Megaphone,
+  CalendarClock,
+  History,
 } from "lucide-react";
 import { useAuth } from "../../auth/useAuth";
 import Avatar from "../common/Avatar";
@@ -29,6 +32,7 @@ const navigationGroups = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/students", label: "Students", icon: Users },
       { to: "/attendance", label: "Attendance", icon: CalendarCheck },
+      { to: "/period-attendance", label: "Period Attendance", icon: CalendarClock },
     ],
   },
   {
@@ -46,10 +50,17 @@ const navigationGroups = [
     ],
   },
   {
+    label: "Communication",
+    items: [
+      { to: "/announcements", label: "Announcements", icon: Megaphone, roles: ["admin", "staff", "teacher"] },
+    ],
+  },
+  {
     label: "Administration",
     items: [
       { to: "/teacher-assignments", label: "Teacher Assignments", icon: Shuffle, roles: ["admin", "staff"] },
       { to: "/users", label: "Users & Roles", icon: ShieldCheck, roles: ["admin"] },
+      { to: "/audit-log", label: "Audit Log", icon: History, roles: ["admin"] },
     ],
   },
 ];

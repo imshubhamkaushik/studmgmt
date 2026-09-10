@@ -34,6 +34,7 @@ import { getRecentActivity } from "../api/audit";
 import { queryKeys } from "../api/queryKeys";
 import { useAuth } from "../auth/useAuth";
 import { describeActivity, activitySubject } from "../utils/describeActivity";
+import { sortByKeyNatural } from "../utils/naturalSort";
 
 import ErrorState from "../components/common/ErrorState";
 import EmptyState from "../components/common/EmptyState";
@@ -164,7 +165,7 @@ export default function DashboardPage() {
     return { status, count: item.count, color: STATUS_COLORS[status] || "#98a2b3" };
   });
   const totalStatusCount = statusData.reduce((sum, item) => sum + item.count, 0);
-  const classData = stats?.studentsByClass ?? [];
+  const classData = sortByKeyNatural(stats?.studentsByClass ?? [], "class");
   const attendance = stats?.todayAttendance;
   const inactivePct = stats?.totalStudents
     ? Math.round(((stats.inactiveStudents ?? 0) / stats.totalStudents) * 100)
@@ -281,8 +282,10 @@ export default function DashboardPage() {
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="chart-donut-center">
-                  <strong>{totalStatusCount}</strong>
-                  <span>students</span>
+                  <div className="chart-donut-center-inner">
+                    <strong>{totalStatusCount}</strong>
+                    <span>students</span>
+                  </div>
                 </div>
               </div>
               <div className="chart-legend">

@@ -34,6 +34,18 @@ export const downloadGenerated = asyncHandler(async (req, res) => {
   sendPdf(res, buffer, `report-card-${req.params.studentId}.pdf`);
 });
 
+export const downloadClassroomZip = asyncHandler(async (req, res) => {
+  const { classroomId, academicYearId } = req.params;
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="report-cards-${classroomId}.zip"`);
+  // streamClassroomReportCardsZip pipes directly into res as each PDF is
+  // ready, rather than buffering the whole archive in memory first — a
+  // full classroom's worth of report cards is small in absolute terms,
+  // but there's no reason to hold it all in one Buffer when a stream
+  // does the same job.
+  await service.streamClassroomReportCardsZip(classroomId, academicYearId, res);
+});
+
 // Portal-facing — a student or their guardian fetching the student's own
 // report card. req.portalUser.studentId is the human-readable student
 // code shared by both actor types, so it's resolved to a Mongo _id here.

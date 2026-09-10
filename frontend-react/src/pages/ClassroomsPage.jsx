@@ -93,13 +93,6 @@ export default function ClassroomsPage() {
 
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Academic structure</p>
-          <h1>Classrooms</h1>
-          <p>Manage class, section, academic year and capacity.</p>
-        </div>
-      </div>
       <section className="form-card">
         <div className="section-heading">
           <div>

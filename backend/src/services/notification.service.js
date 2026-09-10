@@ -1,5 +1,7 @@
 import { Notification } from "../models/notification.model.js";
 import { Student } from "../models/student.model.js";
+import { Enrollment } from "../models/enrollment.model.js";
+import { AcademicYear } from "../models/academic-year.model.js";
 import { AppError } from "../utils/AppError.js";
 
 // Resolves whoever is making the request — a staff User (req.user) or a
@@ -12,21 +14,40 @@ export const resolveViewer = async (req) => {
     const { actorType, sub, studentId: studentCode } = req.portalUser;
     const student = await Student.findOne({ studentId: studentCode }).select("_id").lean();
     if (!student) throw new AppError("Linked student record could not be found.", 404);
-    return { readKey: `${actorType}:${sub}`, studentObjectId: student._id, isStaff: false };
+
+    // Best-effort — a student between enrollments (e.g. right after
+    // promotion, before the new year's rows exist) simply won't match any
+    // classroom-level announcement, which is the correct fallback rather
+    // than an error.
+    const activeYear = await AcademicYear.findOne({ isActive: true }).select("_id").lean();
+    const enrollment = activeYear
+      ? await Enrollment.findOne({ student: student._id, academicYear: activeYear._id, status: "active" })
+          .select("classroom")
+          .lean()
+      : null;
+
+    return {
+      readKey: `${actorType}:${sub}`,
+      studentObjectId: student._id,
+      classroomObjectId: enrollment?.classroom ?? null,
+      isStaff: false,
+    };
   }
-  if (req.user) return { readKey: `user:${req.user.sub}`, studentObjectId: null, isStaff: true };
+  if (req.user) return { readKey: `user:${req.user.sub}`, studentObjectId: null, classroomObjectId: null, isStaff: true };
   throw new AppError("Authentication is required.", 401);
 };
 
-const visibilityFilter = (viewer) =>
-  viewer.isStaff
-    ? {}
-    : {
-        $or: [
-          { "scope.level": "school" },
-          { "scope.level": "student", "scope.student": viewer.studentObjectId },
-        ],
-      };
+const visibilityFilter = (viewer) => {
+  if (viewer.isStaff) return {};
+  const conditions = [
+    { "scope.level": "school" },
+    { "scope.level": "student", "scope.student": viewer.studentObjectId },
+  ];
+  if (viewer.classroomObjectId) {
+    conditions.push({ "scope.level": "classroom", "scope.classroom": viewer.classroomObjectId });
+  }
+  return { $or: conditions };
+};
 
 export const createNotification = async ({ type, title, body, scope, createdBy }) =>
   Notification.create({ type, title, body, scope, createdBy: createdBy || null });

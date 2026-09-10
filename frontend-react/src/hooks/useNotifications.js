@@ -4,6 +4,7 @@ import {
   getUnreadCount,
   markNotificationRead,
   markAllNotificationsRead,
+  createNotification,
 } from "../api/notifications";
 import { queryKeys } from "../api/queryKeys";
 
@@ -48,6 +49,28 @@ export function useMarkAllNotificationsRead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount() });
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list({}) });
+    },
+  });
+}
+
+// Unlike useMyNotifications (which only fetches once the bell dropdown is
+// open, capped at whatever the API's default page size is), this is for
+// the full Announcements page — always enabled, and callers can page
+// through with `params`.
+export function useNotificationsList(params = {}) {
+  return useQuery({
+    queryKey: queryKeys.notifications.list(params),
+    queryFn: () => getMyNotifications(params),
+  });
+}
+
+export function useCreateNotification() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list({}) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount() });
     },
   });
 }

@@ -12,18 +12,28 @@ export default function MarkEntryPage() {
   const [exam, setExam] = useState(null);
   const [rows, setRows] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [lastExamId, setLastExamId] = useState(examId);
   const { show } = useToast();
+
+  // Clearing the roster when the exam selection is cleared is a state
+  // adjustment derived from `examId`, not a synchronization with an
+  // external system — so it belongs during render (React's recommended
+  // pattern for "resetting state when a value changes"), not as a
+  // setState call inside an Effect body.
+  if (examId !== lastExamId) {
+    setLastExamId(examId);
+    if (!examId) {
+      setExam(null);
+      setRows(null);
+    }
+  }
 
   useEffect(() => {
     getExams().then((r) => setExams(r.data));
   }, []);
 
   useEffect(() => {
-    if (!examId) {
-      setExam(null);
-      setRows(null);
-      return;
-    }
+    if (!examId) return;
     getExamRoster(examId)
       .then((res) => {
         setExam(res.data.exam);
@@ -39,7 +49,7 @@ export default function MarkEntryPage() {
         );
       })
       .catch((err) => show(getApiErrorMessage(err, "Unable to load roster."), "error"));
-  }, [examId]);
+  }, [examId, show]);
 
   const updateRow = (studentId, patch) => {
     setRows((prev) => prev.map((r) => (r.studentId === studentId ? { ...r, ...patch } : r)));
@@ -65,14 +75,6 @@ export default function MarkEntryPage() {
 
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Grading</p>
-          <h1>Mark Entry</h1>
-          <p>Select an exam, enter marks for every student, and save them all at once.</p>
-        </div>
-      </div>
-
       <section className="form-card">
         <div className="section-heading">
           <div>

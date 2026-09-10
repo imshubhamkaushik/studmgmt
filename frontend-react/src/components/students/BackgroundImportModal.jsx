@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
@@ -20,10 +20,12 @@ export default function BackgroundImportModal({ isOpen, onClose }) {
   // Refresh the student list/dashboard exactly once, right when the job
   // finishes — not on every poll tick.
   const notifiedRef = useRef(false);
-  if (isTerminal && !notifiedRef.current) {
-    notifiedRef.current = true;
-    invalidateStudents();
-  }
+  useEffect(() => {
+    if (isTerminal && !notifiedRef.current) {
+      notifiedRef.current = true;
+      invalidateStudents();
+    }
+  }, [isTerminal, invalidateStudents]);
 
   const handleClose = () => {
     setJobId(null);

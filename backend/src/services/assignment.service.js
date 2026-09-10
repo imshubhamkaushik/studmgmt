@@ -1,11 +1,10 @@
-import fs from "node:fs";
 import { Assignment } from "../models/assignment.model.js";
 import { Classroom } from "../models/classroom.model.js";
 import { Subject } from "../models/subject.model.js";
 import { AppError } from "../utils/AppError.js";
 import { writeAudit } from "./audit.service.js";
 import { getAssignedClassroomIds } from "./teacher-access.service.js";
-import { absoluteUploadPath, relativeUploadPath } from "../middleware/upload.middleware.js";
+import { uploadBufferToS3, getS3DownloadUrl, sanitizeFilename } from "../utils/s3-storage.js";
 
 async function assertClassroomAccess(classroomId, user) {
   const assignedIds = await getAssignedClassroomIds(user);
@@ -33,7 +32,7 @@ export const listAssignments = async (query = {}, user = null) => {
     .lean();
 };
 
-export const createAssignment = async (input, file, user, requestId) => {
+export const createAssignment = async (input, file, user, requestId, awsClients) => {
   const { classroom, subject, title, description, dueDate, maxMarks } = input;
   if (!classroom || !subject || !title || !dueDate)
     throw new AppError("classroom, subject, title, and dueDate are required.", 400);
@@ -52,15 +51,30 @@ export const createAssignment = async (input, file, user, requestId) => {
     description: description ? String(description).trim() : "",
     dueDate: new Date(dueDate),
     maxMarks: maxMarks != null ? Number(maxMarks) : null,
-    attachment: file
-      ? {
-          originalName: file.originalname,
-          storedPath: relativeUploadPath(file.path),
-          mimeType: file.mimetype,
-          sizeBytes: file.size,
-        }
-      : undefined,
   });
+
+  // The attachment key is keyed by the assignment's own _id, mirroring
+  // how assignment-submission.service.js keys a submission's S3 object by
+  // the submission's _id — created first so there's a stable, unguessable
+  // id to build the key from, updated with the attachment right after.
+  if (file) {
+    const key = `assignments/${assignment._id}/${sanitizeFilename(file.originalname)}`;
+    await uploadBufferToS3({
+      s3Client: awsClients.s3Client,
+      bucket: awsClients.bucket,
+      key,
+      buffer: file.buffer,
+      contentType: file.mimetype,
+    });
+    assignment.attachment = {
+      originalName: file.originalname,
+      storedPath: key,
+      mimeType: file.mimetype,
+      sizeBytes: file.size,
+      storageType: "s3",
+    };
+    await assignment.save();
+  }
 
   await writeAudit({
     entityType: "assignment",
@@ -95,12 +109,16 @@ export const updateAssignment = async (id, input, user, requestId) => {
   return assignment;
 };
 
-export const getAssignmentAttachmentPath = async (id, user) => {
+export const getAssignmentAttachmentPath = async (id, user, awsClients) => {
   const assignment = await Assignment.findById(id).lean();
   if (!assignment) throw new AppError("Assignment not found.", 404);
   if (!assignment.attachment?.storedPath) throw new AppError("This assignment has no attachment.", 404);
   await assertClassroomAccess(assignment.classroom, user);
-  const path = absoluteUploadPath(assignment.attachment.storedPath);
-  if (!fs.existsSync(path)) throw new AppError("The attached file is no longer available.", 404);
-  return { path, originalName: assignment.attachment.originalName, mimeType: assignment.attachment.mimeType };
+
+  const url = await getS3DownloadUrl({
+    s3Client: awsClients.s3Client,
+    bucket: awsClients.bucket,
+    key: assignment.attachment.storedPath,
+  });
+  return { redirectUrl: url, originalName: assignment.attachment.originalName, mimeType: assignment.attachment.mimeType };
 };

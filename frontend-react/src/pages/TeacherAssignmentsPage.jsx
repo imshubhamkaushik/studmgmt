@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Shuffle } from "lucide-react";
 import {
   listTeacherAssignments,
   createTeacherAssignment,
@@ -63,13 +62,6 @@ export default function TeacherAssignmentsPage() {
 
   return (
     <main className="page page-narrow">
-      <div className="page-heading">
-        <div>
-          <p className="eyebrow">Academic staffing</p>
-          <h1><Shuffle size={22} style={{ marginRight: 10, verticalAlign: -3, color: "var(--brand)" }} aria-hidden="true" />Teacher Assignments</h1>
-          <p>Assign teachers to the classrooms they manage.</p>
-        </div>
-      </div>
       {error && <div className="inline-error">{error}</div>}
 
       <section className="form-card">

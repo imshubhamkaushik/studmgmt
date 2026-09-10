@@ -25,6 +25,7 @@ export const submit = asyncHandler(async (req, res) => {
       req.file,
       req.user,
       req.requestId,
+      awsClients(),
     ),
   });
 });
@@ -65,14 +66,6 @@ export const grade = asyncHandler(async (req, res) =>
 );
 
 export const downloadFile = asyncHandler(async (req, res) => {
-  const result = await service.getSubmissionFilePath(req.params.id, req.user, awsClients());
-
-  if (result.redirectUrl) {
-    // S3-stored submission — the presigned URL itself streams the file;
-    // this process never touches the bytes.
-    return res.redirect(302, result.redirectUrl);
-  }
-
-  res.setHeader("Content-Type", result.mimeType || "application/octet-stream");
-  res.download(result.path, result.originalName);
+  const { redirectUrl } = await service.getSubmissionFilePath(req.params.id, req.user, awsClients());
+  res.redirect(302, redirectUrl);
 });
