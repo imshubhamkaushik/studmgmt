@@ -2,9 +2,9 @@ import axios from "axios";
 import { ApiError } from "../../api/ApiError";
 import { getPortalAccessToken, setPortalAccessToken } from "../auth/tokenStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-if (!API_BASE_URL) throw new Error("VITE_API_BASE_URL is not configured.");
+// Same-origin by default: the page and the API are served from one port
+// (see vite.config.js in development, nginx.conf in production).
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
 
 const portalClient = axios.create({
   baseURL: `${API_BASE_URL.replace(/\/$/, "")}/portal`,

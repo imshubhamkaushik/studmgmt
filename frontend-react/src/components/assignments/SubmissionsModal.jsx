@@ -93,7 +93,7 @@ export default function SubmissionsModal({ assignment, onClose }) {
     setUploadError(null);
     try {
       await uploadSubmission.mutateAsync({ studentId: selectedStudent, file });
-      show("Submission uploaded — validating in the background.");
+      show("Submission uploaded.");
       setSelectedStudent("");
     } catch (err) {
       setUploadError(getApiErrorMessage(err, "Unable to upload this submission."));

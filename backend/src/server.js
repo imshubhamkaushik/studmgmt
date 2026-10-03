@@ -5,8 +5,9 @@ import app from "./app.js";
 import { connectDatabase } from "./config/db.js";
 import { loadEnv } from "./config/env.js";
 import { bootstrapAdmin } from "./services/auth.service.js";
+import { failInterruptedImportJobs } from "./services/import-job.service.js";
 
-const { port: PORT } = loadEnv();
+const { port: PORT, host: HOST } = loadEnv();
 
 let server;
 let shuttingDown = false;
@@ -44,8 +45,10 @@ try {
 
   await bootstrapAdmin();
 
-  server = app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+  await failInterruptedImportJobs();
+
+  server = app.listen(PORT, HOST, () => {
+    console.log(`API listening on http://${HOST}:${PORT} (reach it through the app on port 13000)`);
   });
 } catch (error) {
   console.error("Failed to start the application:", error);

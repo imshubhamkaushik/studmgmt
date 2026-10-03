@@ -19,18 +19,14 @@ const assignmentSubmissionSchema = new mongoose.Schema(
       storedPath: { type: String, required: true },
       mimeType: { type: String, default: null },
       sizeBytes: { type: Number, default: null },
-      // "local" only ever applies to rows written before this migration —
-      // every submission flow (presigned client upload and the
-      // staff-recorded path alike) now writes to S3, so new rows default
-      // to "s3" rather than requiring every caller to say so explicitly.
-      storageType: { type: String, enum: ["local", "s3"], default: "s3" },
+      storageType: { type: String, enum: ["local"], default: "local" },
     },
     submittedAt: { type: Date, default: Date.now },
     status: {
       type: String,
-      // pending_upload: submission row exists, presigned upload issued,
-      // file not yet confirmed by process-submission. rejected: the
-      // uploaded file failed validation (size/type) after the fact.
+      // pending_upload / rejected are no longer produced by the app (files
+      // are validated and stored in the same request) but stay in the enum
+      // so any older rows keep loading and saving cleanly.
       enum: ["pending_upload", "submitted", "late", "rejected", "graded"],
       default: "submitted",
     },

@@ -3,24 +3,19 @@ import apiClient from "./client.js";
 export const listSubmissions = (assignmentId) =>
   apiClient.get(`/assignment-submissions/assignment/${assignmentId}`);
 
-export const requestSubmissionUploadUrl = (assignmentId, { studentId, originalName, mimeType }) =>
-  apiClient.post(`/assignment-submissions/assignment/${assignmentId}/upload-url`, {
-    studentId,
-    originalName,
-    mimeType,
-  });
-
-// S3 presigned POST (not PUT, unlike the CSV import flow) — every field
-// S3 gave back must be present in the form, and the file itself must be
-// appended last or S3 rejects the upload.
-export async function uploadSubmissionFile({ uploadUrl, fields, file }) {
+// Staff recording a submission on a student's behalf. Multipart upload:
+// axios would JSON-encode a FormData body under the client's default JSON
+// content type, so it is overridden explicitly (the browser adds the
+// multipart boundary itself).
+export const uploadSubmission = (assignmentId, { studentId, file }) => {
   const formData = new FormData();
-  Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+  formData.append("studentId", studentId);
   formData.append("file", file);
-
-  const response = await fetch(uploadUrl, { method: "POST", body: formData });
-  if (!response.ok) throw new Error("Upload to storage failed. Please try again.");
-}
+  return apiClient.post(`/assignment-submissions/assignment/${assignmentId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    timeout: 60000,
+  });
+};
 
 export const gradeSubmission = (id, data) =>
   apiClient.patch(`/assignment-submissions/${id}/grade`, data);

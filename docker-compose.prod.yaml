@@ -1,0 +1,63 @@
+# Full containerised stack (MongoDB + API + web), for servers / cloud hosts:
+#
+#   cp .env.production.example .env      # then replace every placeholder
+#   docker compose -f docker-compose.prod.yaml up -d --build
+#
+# The ONLY published port is 13000 (nginx: the web app and /api). MongoDB and
+# the API stay on the private compose network.
+services:
+  mongodb:
+    image: mongo:8
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}
+    volumes: [mongo-data:/data/db]
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 }).ok' | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      HOST: 0.0.0.0
+      MONGODB_URI: mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongodb:27017/studDB?authSource=admin
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      JWT_ACCESS_TTL_SECONDS: ${JWT_ACCESS_TTL_SECONDS:-900}
+      JWT_REFRESH_TTL_DAYS: ${JWT_REFRESH_TTL_DAYS:-7}
+      ADMIN_NAME: ${ADMIN_NAME:-Administrator}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?set ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-120}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-1}
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes: [backend-uploads:/app/uploads]
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  frontend:
+    build:
+      context: ./frontend-react
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports: ["13000:13000"]
+
+volumes:
+  mongo-data:
+  backend-uploads:

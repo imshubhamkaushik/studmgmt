@@ -1,166 +1,148 @@
-# Student Management System
+# StudentHub — Student Management System
 
-Full-stack Student Management System built with React, Express and MongoDB.
+A school management web app: student records, classes, attendance, exams and report cards, assignments, announcements, and a self-service portal for students and guardians.
+
+**Stack:** React + Vite (frontend) · Express (API) · MongoDB
 
 ## Features
 
-- Student CRUD with immutable, atomically generated Student IDs
-- Class, Section and Roll Number management
-- Database-level uniqueness for `class + section + rollNo`
-- Strict `YYYY-MM-DD` DOB validation
-- Search, sorting and pagination with server-side guardrails
-- Dashboard statistics
-- Centralized API errors and React Query data management
-- Backend validation tests and GitHub Actions CI
+**Staff app**
+- **Students** – create, edit, archive/restore; immutable auto-generated Student IDs; statuses (`active`, `inactive`, `graduated`, `transferred`, `suspended`); search, filters, sorting, pagination; CSV export; CSV import (quick import with preview, and a background **Bulk Import** for large files with progress and a downloadable error report).
+- **Academic structure** – academic years, classrooms (class + section, capacity), subjects, grading terms with weights.
+- **Enrollment & promotion** – place students in classrooms per year with history; batch promotion that is validated before anything changes.
+- **Attendance** – daily attendance per class/section, plus period-wise attendance driven by the timetable.
+- **Exams & marks** – exams, mark entry, weighted subject grades, auto-generated report card PDFs (single or whole classroom as a ZIP).
+- **Assignments** – teachers publish assignments with an optional attachment, record or review submissions, and grade them with feedback.
+- **Announcements & notifications** – school-, classroom- or student-wide notices.
+- **Users & roles** – admin, staff, teacher; teachers are assigned to classrooms and only see those.
+- **Audit log** – who changed what and when, with filters.
+- **Dashboard** – headline stats and recent activity.
+
+**Student / guardian portal** (`/portal`)
+Dashboard, attendance, assignments (submit work), report card, notifications and password change. Portal accounts are created automatically with each student:
+
+| Account | Username | Default password |
+|---|---|---|
+| Student | Student ID (e.g. `STU-000009`) | Student ID + date of birth `YYYYMMDD` |
+| Guardian | Student ID + `-parent` | Student ID + date of birth `YYYYMMDD` + `parent` |
+
+Families should change the default password after first sign-in (the portal reminds them until they do).
+
+## Roles
+
+| Role | Can do |
+|---|---|
+| Admin | Everything, including users, academic structure, promotion, audit log |
+| Staff | Students, enrollments, attendance, imports/exports |
+| Teacher | Read access plus attendance, marks, assignments and grading for assigned classrooms only |
+
+Accounts lock for 15 minutes after 5 failed sign-ins.
+
+## Run locally
+
+Requirements: **Node.js 20+** and **Docker** (for MongoDB only).
+
+```bash
+npm run install:all                 # install root, backend and frontend dependencies
+npm run db:up                       # start MongoDB in Docker (docker-compose.yaml)
+cp backend/.env.example backend/.env
+npm run dev                         # start the API and the web app
+```
+
+Open **http://localhost:13000** and sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from `backend/.env` (the admin is created on first start).
+
+Everything is served from **port 13000**. The dev server forwards `/api` to the API, which listens privately on `127.0.0.1:5000` and is not meant to be opened directly. Stop the database with `npm run db:down` (add `-v` to the compose command to wipe its data).
+
+## Configuration (`backend/.env`)
+
+| Variable | Purpose |
+|---|---|
+| `MONGODB_URI` | MongoDB connection string (required) |
+| `JWT_SECRET` | Signing secret, 32+ characters (required) |
+| `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | First administrator, created on start-up |
+| `JWT_ACCESS_TTL_SECONDS`, `JWT_REFRESH_TTL_DAYS` | Staff session lifetimes (defaults 900 s / 7 days) |
+| `PORTAL_ACCESS_TTL_SECONDS`, `PORTAL_REFRESH_TTL_DAYS` | Portal session lifetimes |
+| `PORT` | Private API port (default 5000) |
+| `RATE_LIMIT_MAX` | Requests per minute per IP (default 120) |
+| `CORS_ORIGINS` | Optional extra allowed origins; the app's own origin is always allowed |
+| `REDIS_URL` | Optional shared rate-limit store when running several API instances |
+| `TRUST_PROXY_HOPS` | Reverse proxies in front of the API (default 1) |
+
+Change the sample `JWT_SECRET` and admin password for anything beyond your own machine.
+
+## Where data lives
+
+- **Records:** MongoDB.
+- **Uploaded files** (assignment attachments, submissions, report card PDFs): `backend/uploads/`.
+- **Sessions:** refresh tokens are stored hashed in MongoDB and sent as HttpOnly cookies.
+
+## Deploying (single container stack)
+
+`docker-compose.prod.yaml` runs MongoDB, the API and the web server. Only **port 13000** is published; nginx serves the app and forwards `/api` to the API.
+
+```bash
+cp .env.production.example .env     # replace every placeholder
+docker compose -f docker-compose.prod.yaml up -d --build
+```
+
+Then open `http://<host>:13000`. Notes:
+- Put HTTPS in front (load balancer or reverse proxy) — in production the refresh cookie is `Secure`, `HttpOnly` and `SameSite=Strict`. Set `TRUST_PROXY_HOPS=2` when a load balancer sits before the web container.
+- MongoDB is not published outside the compose network.
+- Health: `GET /api/v1/health` (liveness) and `GET /api/v1/ready` (MongoDB ready).
+
+## Backup and restore
+
+Requires MongoDB Database Tools (`mongodump`, `mongorestore`):
+
+```bash
+MONGODB_URI='mongodb://…' BACKUP_DIR=./backups ./ops/backup/backup-mongodb.sh
+MONGODB_URI='mongodb://…' ./ops/backup/restore-mongodb.sh ./backups/<folder>/database.archive
+```
+
+Backups are compressed with a SHA-256 checksum; `BACKUP_RETENTION_DAYS` (default 14) prunes old local copies. Test restores against an isolated database, never production.
 
 ## API
 
-Base URL: `/api/v1`
+Base path `/api/v1` (machine-readable spec at `/api/v1/openapi.json`). All business endpoints need a Bearer access token.
 
-- `GET /health`
-- `GET /ready`
-- `GET /students`
-- `POST /students`
-- `GET /students/:id`
-- `PATCH /students/:id`
-- `DELETE /students/:id`
-- `GET /dashboard/stats`
+`auth` · `students` (incl. `import`, `export`, `import-jobs`) · `dashboard` · `audit` · `academic-years` · `classrooms` · `enrollments` · `teacher-classroom-assignments` · `subjects` · `grading-terms` · `exams` · `marks` · `timetable` · `attendance` · `period-attendance` · `assignments` · `assignment-submissions` · `notifications` · `report-cards` · `portal/*` (student/guardian)
 
-## Setup
+## Project layout
+
+```
+backend/          Express API (controllers, services, models, routes, tests)
+frontend-react/   React app (staff app + portal) and nginx config
+shared/           Token and student-validation code used by the API
+ops/backup/       MongoDB backup and restore scripts
+docker-compose.yaml        MongoDB for local development
+docker-compose.prod.yaml   Full stack for deployment
+```
+
+## Tests and checks
 
 ```bash
-npm install
-npm --prefix backend install
-npm --prefix frontend-react install
+npm run test:backend                 # API unit tests
+npm --prefix frontend-react test     # frontend tests
+npm run lint
+npm run build
 ```
 
-Copy the example environment files:
-
-```text
-backend/.env.example -> backend/.env
-frontend-react/.env.example -> frontend-react/.env
-```
-
-Start development:
+Integration tests need an isolated, empty MongoDB database (they clear collections — never point them at real data):
 
 ```bash
-npm run dev
+export TEST_MONGODB_URI='mongodb://127.0.0.1:27017/studmgmt_test'
+export JWT_SECRET='a-test-secret-longer-than-32-characters'
+npm run test:integration
 ```
 
-Frontend: `http://localhost:5173`  
-API health: `http://localhost:5000/api/v1/health`
+## Maintenance scripts
 
-## Validation commands
-
-```bash
-npm --prefix backend test
-npm --prefix frontend-react run lint
-npm --prefix frontend-react run build
-```
-
-## Student ID migration
-
-Inspect legacy data without changing it:
+For databases created by older versions:
 
 ```bash
 npm --prefix backend run migrate:student-ids -- --dry-run
+npm --prefix backend run migrate:student-statuses -- --dry-run
+npm --prefix backend run migrate:student-portal-credentials
 ```
 
-Student IDs are unique and monotonic, but are not guaranteed to be gapless.
-
-## Latest feature upgrade
-
-The student module now supports a complete student lifecycle and richer data operations:
-
-- Student statuses: `active`, `inactive`, `graduated`, `transferred`, `suspended`
-- Advanced filtering by class, section and status
-- CSV export for the current filtered student set
-- CSV import (up to 500 students per request) with server-side validation and duplicate detection
-- Dashboard active-student and status analytics
-- Unique `class + section + rollNo` data integrity rule
-
-### New API endpoints
-
-- `GET /api/v1/students/filter-options`
-- `GET /api/v1/students/export`
-- `POST /api/v1/students/import`
-
-CSV import accepts JSON from the frontend after local CSV parsing:
-
-```json
-{
-  "students": [
-    {
-      "name": "Alice Smith",
-      "class": "10",
-      "section": "A",
-      "rollNo": 1,
-      "status": "active",
-      "dob": "2008-02-29"
-    }
-  ]
-}
-```
-
-For existing databases, migrate legacy records before relying on status filters:
-
-```bash
-cd backend
-npm run migrate:student-statuses -- --dry-run
-npm run migrate:student-statuses
-```
-
-## Attendance
-
-The application now supports daily attendance for active students. Open **Attendance**, select a date, class, and section, load active students, mark `present`, `absent`, `late`, or `excused`, and save. Saving the same student/date again updates the existing record instead of creating duplicates.
-
-API endpoints:
-
-- `GET /api/v1/attendance`
-- `POST /api/v1/attendance/bulk`
-- `GET /api/v1/attendance/summary`
-- `GET /api/v1/attendance/student/:studentId`
-
-Attendance is protected by a unique `student + date` database index. Future dates and duplicate student IDs inside a bulk request are rejected.
-
-## Academic structure
-
-The application now supports **Academic Years** and **Classrooms** without destructively migrating existing students. Create an academic year, set one active, then create class/section classrooms with optional capacity. This is a compatibility bridge for the existing student `class` and `section` fields; the next migration phase can attach students to year-specific enrollments before promotion is enabled.
-
-
-## Enrollment and Promotion
-Students can now be assigned to an Academic Year and Classroom through `/api/v1/enrollments`. Enrollment history is preserved. Capacity and destination roll-number conflicts are validated. Promotion is available through `POST /api/v1/enrollments/promote`; it prevalidates the complete batch before changing source enrollments and creating destination placements.
-
-
-## Authentication and roles
-
-The API now requires a Bearer access token for all business endpoints. Configure `JWT_SECRET` (at least 32 characters) and bootstrap the first administrator with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Access tokens are short-lived (default 15 minutes). Roles are `admin`, `staff`, and `teacher`.
-
-- Admin: full management, academic structure, promotion and users.
-- Staff: student and enrollment management plus attendance.
-- Teacher: read access and attendance marking.
-
-Create additional users through the **Users & Roles** screen as an administrator. Do not commit real secrets or bootstrap passwords.
-
-## Phase 11 production hardening
-Refresh-session rotation, HttpOnly refresh cookies, server-side session revocation, logout, user-deactivation session revocation, and corrected production Docker environment wiring are included. See `PRODUCTION_HARDENING.md`.
-
-
-## Phase 13: Audit identity and teacher classroom access
-
-- Audit writes automatically capture the authenticated actor from request context.
-- Admins can assign/revoke teachers to/from classrooms through `/api/v1/teacher-classroom-assignments`.
-- Teachers are server-side restricted from marking or querying attendance for classrooms they are not assigned to.
-- Assignment checks are authorization controls; hiding frontend navigation alone is not relied on for security.
-
-
-## Phase 13 teacher access
-Teachers are assigned to classrooms by administrators. Server-side student and enrollment queries are scoped to assigned classrooms; direct student profile and audit-history access is denied when the teacher has no active placement for that student.
-
-## Production operations
-
-See [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md) for Docker startup, health/readiness checks, backup, restore drills, secrets, TLS, and scaling requirements.
-
-### Phase 20 verification fix
-
-A dependency consistency issue was found during the final validation pass: `cookie-parser` had been added to `backend/package.json` in an earlier phase without a matching `backend/package-lock.json` update, which would cause `npm ci` in CI and Docker builds to fail. The backend now uses a small internal cookie-parsing middleware, removing that unsynchronised dependency. `npm ci` can therefore use the committed lockfile consistently. Docker itself could not be executed in this workspace because the Docker CLI is unavailable.
+Drop `--dry-run` to apply.

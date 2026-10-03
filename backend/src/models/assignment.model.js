@@ -24,17 +24,13 @@ const assignmentSchema = new mongoose.Schema(
     dueDate: { type: Date, required: true },
     maxMarks: { type: Number, default: null, min: 1 },
     // Reference material the teacher attaches (instructions, a worksheet,
-    // etc). Always S3-backed now — see s3-storage.js — but storageType is
-    // kept (rather than assumed) for the same reason assignment-submission
-    // keeps it: any row created before this migration still points at a
-    // local-disk path, and defaulting new rows to "s3" explicitly avoids
-    // ambiguity about which flow wrote a given row.
+    // etc). Stored on local disk under backend/uploads/.
     attachment: {
       originalName: { type: String, default: null },
       storedPath: { type: String, default: null },
       mimeType: { type: String, default: null },
       sizeBytes: { type: Number, default: null },
-      storageType: { type: String, enum: ["local", "s3"], default: "s3" },
+      storageType: { type: String, enum: ["local"], default: "local" },
     },
     isArchived: { type: Boolean, default: false },
   },

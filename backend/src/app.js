@@ -38,7 +38,9 @@ import openApiDocument from "../docs/openapi.json" with { type: "json" };
 
 const app = express();
 app.disable("x-powered-by");
-app.set("trust proxy", 1);
+// Number of reverse proxies in front of the API (nginx = 1; nginx behind a
+// load balancer = 2). Needed so rate limiting sees the real client IP.
+app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS ?? 1));
 app.use(requestContext);
 app.use(securityHeaders);
 app.use(
@@ -48,24 +50,30 @@ app.use(
   }),
 );
 
+// The app and API share one origin (port 13000), so same-origin browser
+// requests are always allowed. CORS_ORIGINS is only needed to additionally
+// allow some other origin.
 const allowedOrigins = new Set(
-  (process.env.CORS_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173")
+  (process.env.CORS_ORIGINS || "")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),
 );
 
+const isSameOrigin = (origin, req) => {
+  try {
+    return new URL(origin).host === (req.get("x-forwarded-host") || req.get("host"));
+  } catch {
+    return false;
+  }
+};
+
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.has(origin)) return callback(null, true);
-      return callback(
-        new AppError("Origin is not allowed by CORS policy.", 403),
-      );
-    },
-    // Required for HttpOnly refresh-token cookies when the SPA and API use
-    // different origins (for example localhost:5173/8080 -> localhost:5000).
-    credentials: true,
+  cors((req, callback) => {
+    const origin = req.get("origin");
+    const allowed = !origin || allowedOrigins.has(origin) || isSameOrigin(origin, req);
+    if (!allowed) return callback(new AppError("Origin is not allowed by CORS policy.", 403));
+    return callback(null, { origin: true, credentials: true });
   }),
 );
 app.use(express.json({ limit: "100kb" }));

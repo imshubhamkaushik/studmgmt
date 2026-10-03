@@ -16,5 +16,9 @@ export const loadEnv = () => {
     throw new Error("PORT must be an integer between 1 and 65535.");
   }
 
-  return { port };
+  // Loopback by default: the API is only reachable through the app on port
+  // 13000 (dev server / nginx). Containers set HOST=0.0.0.0 so nginx can reach it.
+  const host = process.env.HOST?.trim() || "127.0.0.1";
+
+  return { port, host };
 };

@@ -1,47 +1,14 @@
-# StudentHub Frontend
+# StudentHub web app
 
-React frontend for the Student Management System.
+React app for staff and the student/guardian portal. See the [root README](../README.md) for running the whole system.
 
-## Stack
-
-- React
-- Vite
-- React Router
-- TanStack Query
-- React Hook Form
-- Zod
-- Axios
-
-## Development
-
-From `test/`:
+- Stack: React, Vite, React Router, TanStack Query, React Hook Form, Zod, Axios
+- Dev server: http://localhost:13000 (forwards `/api` to the API on `127.0.0.1:5000`)
+- API base URL: `/api/v1` on the same origin; override with `VITE_API_BASE_URL` only if the API is hosted elsewhere
 
 ```bash
-npm run frontend
-```
-
-Or run the complete application:
-
-```bash
-npm run dev
-```
-
-Frontend: `http://localhost:5173`
-
-Configure the backend API with `frontend-react/.env`:
-
-```env
-VITE_API_BASE_URL=http://localhost:5000/api/v1
-```
-
-## Build
-
-```bash
-npm --prefix frontend-react run build
-```
-
-## Lint
-
-```bash
-npm --prefix frontend-react run lint
+npm run dev      # development
+npm run build    # production build
+npm run lint
+npm test
 ```

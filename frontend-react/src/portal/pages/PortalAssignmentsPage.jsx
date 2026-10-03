@@ -37,11 +37,7 @@ function AssignmentRow({ assignment }) {
     setBusy(true);
     setError("");
     try {
-      const { data } = await submissionsApi.requestUploadUrl(assignment._id, {
-        originalName: file.name,
-        mimeType: file.type || "application/octet-stream",
-      });
-      await submissionsApi.uploadFileToS3(data, file);
+      await submissionsApi.submitAssignment(assignment._id, file);
       await queryClient.invalidateQueries({ queryKey: portalQueryKeys.assignments() });
     } catch (err) {
       setError(getApiErrorMessage(err, "Upload failed. Please try again."));

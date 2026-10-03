@@ -1,6 +1,3 @@
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { AssignmentSubmission } from "../models/assignment-submission.model.js";
 import { Assignment } from "../models/assignment.model.js";
 import { Student } from "../models/student.model.js";
@@ -8,9 +5,10 @@ import { Enrollment } from "../models/enrollment.model.js";
 import { AppError } from "../utils/AppError.js";
 import { writeAudit } from "./audit.service.js";
 import { getAssignedClassroomIds } from "./teacher-access.service.js";
-import { uploadBufferToS3, sanitizeFilename } from "../utils/s3-storage.js";
+import { saveBuffer, sanitizeFilename } from "../utils/file-storage.js";
+import { notifyUser } from "./notification.service.js";
 
-const MAX_SUBMISSION_BYTES = 10 * 1024 * 1024; // enforced by S3 itself via the presigned POST condition below
+const MAX_SUBMISSION_BYTES = 10 * 1024 * 1024; // portal (student) uploads only; staff uploads use the global 15MB multer limit
 
 async function assertAssignmentAccess(assignment, user) {
   const assignedIds = await getAssignedClassroomIds(user);
@@ -33,82 +31,64 @@ async function assertStudentCanSubmit(assignment, studentId) {
   if (!isEnrolled) throw new AppError("You are not enrolled in this assignment's classroom.", 403);
 }
 
-// Submission records are created (with their own Mongo _id) before the
-// presigned POST is generated, so the S3 key can just be keyed by that
-// _id directly — process-submission then only has to read one path
-// segment out of the S3 event to know which submission an uploaded file
-// belongs to, rather than re-deriving it from assignment+student+a
-// separate random id.
-async function createPendingSubmission(assignment, studentId, originalName, mimeType) {
+// Writes the uploaded file to local disk and upserts the one submission row
+// for this assignment+student. The submission is created first (without a
+// confirmed file) purely to get a stable _id to build the storage path
+// from. Resubmitting replaces the file and clears any previous grade.
+async function storeSubmissionFile(assignment, studentId, file) {
+  const isLate = new Date() > assignment.dueDate;
+
   const submission = await AssignmentSubmission.findOneAndUpdate(
     { assignment: assignment._id, student: studentId },
-    {
-      assignment: assignment._id,
-      student: studentId,
-      file: { originalName, storedPath: "pending", mimeType: mimeType || null, sizeBytes: null, storageType: "s3" },
-      submittedAt: new Date(),
-      status: "pending_upload",
-      rejectionReason: null,
-      marksObtained: null,
-      feedback: "",
-      gradedBy: null,
-      gradedAt: null,
-    },
-    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true },
+    { assignment: assignment._id, student: studentId },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
   );
 
-  const key = `submissions/${submission._id}/${sanitizeFilename(originalName)}`;
-  submission.file.storedPath = key;
+  const key = `submissions/${submission._id}/${sanitizeFilename(file.originalname)}`;
+  await saveBuffer({ key, buffer: file.buffer });
+
+  submission.file = {
+    originalName: file.originalname,
+    storedPath: key,
+    mimeType: file.mimetype,
+    sizeBytes: file.size,
+    storageType: "local",
+  };
+  submission.submittedAt = new Date();
+  submission.status = isLate ? "late" : "submitted";
+  submission.rejectionReason = null;
+  submission.marksObtained = null;
+  submission.feedback = "";
+  submission.gradedBy = null;
+  submission.gradedAt = null;
   await submission.save();
 
-  return { submission, key };
+  return submission;
 }
-
-async function buildUploadResponse(submission, key, { s3Client, bucket }) {
-  const presigned = await createPresignedPost(s3Client, {
-    Bucket: bucket,
-    Key: key,
-    Conditions: [["content-length-range", 0, MAX_SUBMISSION_BYTES]],
-    Expires: 300,
-  });
-
-  return {
-    uploadUrl: presigned.url,
-    fields: presigned.fields,
-    submissionId: submission._id,
-    isLate: submission.status === "late",
-  };
-}
-
-// Staff/teacher recording a submission on a student's behalf (or logging
-// a physical submission that gets a scanned copy uploaded after the
-// fact) — studentId comes from the request body.
-export const requestSubmissionUploadUrlForStaff = async (assignmentId, studentId, { originalName, mimeType }, user, awsClients) => {
-  if (!originalName) throw new AppError("originalName is required.", 400);
-
-  const assignment = await Assignment.findById(assignmentId);
-  if (!assignment) throw new AppError("Assignment not found.", 404);
-  await assertAssignmentAccess(assignment, user);
-
-  const student = await Student.findById(studentId);
-  if (!student) throw new AppError("Student not found.", 404);
-
-  const { submission, key } = await createPendingSubmission(assignment, studentId, originalName, mimeType);
-  return buildUploadResponse(submission, key, awsClients);
-};
 
 // A student uploading their own work through the portal — studentId is
-// resolved from their own session by the controller, never taken from
-// the request body, so there's no way to submit as someone else.
-export const requestSubmissionUploadUrlForStudent = async (assignmentId, studentId, { originalName, mimeType }, awsClients) => {
-  if (!originalName) throw new AppError("originalName is required.", 400);
+// resolved from their own session by the controller, never taken from the
+// request body, so there's no way to submit as someone else.
+export const recordStudentSubmission = async (assignmentId, studentId, file) => {
+  if (!file) throw new AppError("A file is required for a submission.", 400);
+  if (file.size > MAX_SUBMISSION_BYTES) throw new AppError("File is too large. Maximum size is 10MB.", 400);
 
   const assignment = await Assignment.findById(assignmentId);
   if (!assignment) throw new AppError("Assignment not found.", 404);
   await assertStudentCanSubmit(assignment, studentId);
 
-  const { submission, key } = await createPendingSubmission(assignment, studentId, originalName, mimeType);
-  return buildUploadResponse(submission, key, awsClients);
+  const submission = await storeSubmissionFile(assignment, studentId, file);
+
+  // Best-effort — a notification failure shouldn't undo a submission that
+  // was already recorded successfully.
+  const student = await Student.findById(studentId).select("name").lean();
+  await notifyUser(assignment.teacher, {
+    type: "submission_received",
+    title: "New submission received",
+    body: `${student?.name || "A student"} submitted "${assignment.title}".`,
+  }).catch(() => {});
+
+  return submission;
 };
 
 export const listSubmissions = async (assignmentId, user) => {
@@ -122,14 +102,11 @@ export const listSubmissions = async (assignmentId, user) => {
     .lean();
 };
 
-// NOTE: studentId is accepted explicitly here rather than derived from the
-// session, because student/guardian login doesn't exist yet (see the
-// project notes) — staff/teacher/admin record a submission on the
-// student's behalf for now (this also legitimately covers logging a
-// physical/paper submission). Once student auth lands, add a parallel
-// student-facing endpoint that takes studentId from their own session
-// instead of the request body, reusing this same function underneath.
-export const recordSubmission = async (assignmentId, studentId, file, user, requestId, awsClients) => {
+// Staff/teacher/admin record a submission on a student's behalf (this also
+// legitimately covers logging a physical/paper submission). studentId
+// comes from the request body; students submit their own work through
+// recordStudentSubmission above instead.
+export const recordSubmission = async (assignmentId, studentId, file, user, requestId) => {
   if (!file) throw new AppError("A file is required for a submission.", 400);
   const assignment = await Assignment.findById(assignmentId);
   if (!assignment) throw new AppError("Assignment not found.", 404);
@@ -138,41 +115,7 @@ export const recordSubmission = async (assignmentId, studentId, file, user, requ
   const student = await Student.findById(studentId);
   if (!student) throw new AppError("Student not found.", 404);
 
-  const isLate = new Date() > assignment.dueDate;
-
-  // Created first (without a confirmed key) purely to get a stable _id to
-  // key the S3 object by — same reason createPendingSubmission() above
-  // does it for the presigned-upload flow, just without the "pending"
-  // intermediate state since the whole file is already in hand here.
-  const submission = await AssignmentSubmission.findOneAndUpdate(
-    { assignment: assignmentId, student: studentId },
-    { assignment: assignmentId, student: studentId },
-    { upsert: true, new: true, setDefaultsOnInsert: true },
-  );
-
-  const key = `submissions/${submission._id}/${sanitizeFilename(file.originalname)}`;
-  await uploadBufferToS3({
-    s3Client: awsClients.s3Client,
-    bucket: awsClients.bucket,
-    key,
-    buffer: file.buffer,
-    contentType: file.mimetype,
-  });
-
-  submission.file = {
-    originalName: file.originalname,
-    storedPath: key,
-    mimeType: file.mimetype,
-    sizeBytes: file.size,
-    storageType: "s3",
-  };
-  submission.submittedAt = new Date();
-  submission.status = isLate ? "late" : "submitted";
-  submission.marksObtained = null;
-  submission.feedback = "";
-  submission.gradedBy = null;
-  submission.gradedAt = null;
-  await submission.save();
+  const submission = await storeSubmissionFile(assignment, studentId, file);
 
   await writeAudit({
     entityType: "assignmentSubmission",
@@ -212,16 +155,15 @@ export const gradeSubmission = async (id, input, user, requestId) => {
   return submission;
 };
 
-export const getSubmissionFilePath = async (id, user, awsClients) => {
+export const getSubmissionFilePath = async (id, user) => {
   const submission = await AssignmentSubmission.findById(id).populate("assignment").lean();
   if (!submission) throw new AppError("Submission not found.", 404);
   await assertAssignmentAccess(submission.assignment, user);
   if (!submission.file?.storedPath) throw new AppError("This submission has no file.", 404);
 
-  const url = await getSignedUrl(
-    awsClients.s3Client,
-    new GetObjectCommand({ Bucket: awsClients.bucket, Key: submission.file.storedPath }),
-    { expiresIn: 300 },
-  );
-  return { redirectUrl: url, originalName: submission.file.originalName, mimeType: submission.file.mimeType };
+  return {
+    key: submission.file.storedPath,
+    originalName: submission.file.originalName,
+    mimeType: submission.file.mimeType,
+  };
 };

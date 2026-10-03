@@ -3,6 +3,7 @@ import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import Modal from "../common/Modal";
 import Button from "../common/Button";
 import { useStartBackgroundImport, useImportJobStatus, useInvalidateStudentsAfterImport } from "../../hooks/useBackgroundImport";
+import { downloadImportErrorReport } from "../../api/imports";
 import { getApiErrorMessage } from "../../utils/apiErrorMessage";
 
 export default function BackgroundImportModal({ isOpen, onClose }) {
@@ -26,6 +27,22 @@ export default function BackgroundImportModal({ isOpen, onClose }) {
       invalidateStudents();
     }
   }, [isTerminal, invalidateStudents]);
+
+  const handleDownloadReport = async () => {
+    try {
+      const blob = await downloadImportErrorReport(jobId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `import-errors-${jobId}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setStartError(getApiErrorMessage(err, "Unable to download the error report."));
+    }
+  };
 
   const handleClose = () => {
     setJobId(null);
@@ -54,9 +71,9 @@ export default function BackgroundImportModal({ isOpen, onClose }) {
         {!jobId && (
           <>
             <p>
-              For large files (hundreds of students), this uploads directly to
-              storage and processes in the background — you can navigate away
-              and check back.
+              For large files (hundreds of students), this uploads the CSV and
+              processes it in the background — you can keep working while it
+              runs.
             </p>
             <Button
               variant="secondary"
@@ -109,15 +126,19 @@ export default function BackgroundImportModal({ isOpen, onClose }) {
             {job.errorCount > 0 && (
               <p className="csv-row-issues">
                 <AlertCircle size={14} aria-hidden="true" /> {job.errorCount} row(s) were rejected before queuing.
-                {job.errorReportUrl && (
-                  <>
-                    {" "}
-                    <a href={job.errorReportUrl} target="_blank" rel="noreferrer">
-                      Download the error report
-                    </a>
-                  </>
-                )}
               </p>
+            )}
+            {job.hasErrorReport && (
+              <p>
+                <Button variant="secondary" onClick={handleDownloadReport}>
+                  Download the error report
+                </Button>
+              </p>
+            )}
+            {startError && (
+              <div className="mutation-error" role="alert">
+                {startError}
+              </div>
             )}
           </div>
         )}

@@ -1,6 +1,5 @@
 // Canonical implementation — backend/src/utils/jwt.js re-exports this
-// rather than defining its own copy. The get-upload-url Lambda imports it
-// directly. There must only ever be one implementation of this: it's
+// rather than defining its own copy. There must only ever be one implementation of this: it's
 // security-critical, hand-rolled (HMAC-SHA256 + constant-time compare via
 // node:crypto, no external JWT library), and two copies drifting apart
 // over time is exactly how token verification bugs get introduced.

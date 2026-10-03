@@ -1,10 +1,8 @@
 // Canonical implementation — backend/src/validators/student.validator.js
-// re-exports this rather than defining its own copy, and the
-// process-import Lambda imports it directly for CSV row validation. The
-// whole point of pulling this out of backend/ is that a row a teacher
-// uploads via CSV and a row entered through the API must be judged by
-// exactly the same rules, with zero chance of the two silently drifting
-// apart after future edits.
+// re-exports this rather than defining its own copy. A row uploaded via CSV
+// (including the background Bulk Import) and a row entered through the API
+// must be judged by exactly the same rules, with zero chance of the two
+// silently drifting apart after future edits.
 export class ValidationError extends Error {
   constructor(message, statusCode = 400) {
     super(message);

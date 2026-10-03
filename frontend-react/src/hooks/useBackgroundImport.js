@@ -1,17 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { requestCsvUploadUrl, uploadCsvFile, getImportJobStatus } from "../api/imports";
+import { startCsvImport, getImportJobStatus } from "../api/imports";
 import { queryKeys } from "../api/queryKeys";
 
 const TERMINAL_STATUSES = new Set(["completed", "failed"]);
 
-// Request a presigned URL, then PUT the file to S3. Resolves with the
-// jobId, which the caller then hands to useImportJobStatus to watch.
+// Uploads the CSV to the backend, which starts the import in the
+// background. Resolves with the jobId, which the caller then hands to
+// useImportJobStatus to watch.
 export function useStartBackgroundImport() {
   return useMutation({
     mutationFn: async (file) => {
-      const { uploadUrl, jobId } = await requestCsvUploadUrl();
-      await uploadCsvFile(uploadUrl, file);
-      return jobId;
+      const response = await startCsvImport(file);
+      return response.data.jobId;
     },
   });
 }

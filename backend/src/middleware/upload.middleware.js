@@ -29,21 +29,10 @@ function fileFilter(req, file, cb) {
   cb(null, true);
 }
 
-// Keeps the file in memory (req.file.buffer) rather than writing it to
-// local disk. Two of this app's three upload flows use this: a teacher
-// attaching reference material to an assignment, and staff recording a
-// submission on a student's behalf — in both cases the backend receives
-// the whole file in one multipart request and immediately forwards the
-// buffer to S3 with a PutObjectCommand (see utils/s3-storage.js), so
-// nothing is ever persisted to the container's local filesystem for
-// those two flows, and there's no PersistentVolume to keep in sync
-// across replicas for them.
-//
-// The third flow — generated report-card PDFs — is the one exception,
-// still on local disk (see report-card.service.js's absoluteUploadPath
-// usage below) because its integration test exercises a full
-// generate-then-download round trip and this project's CI has no
-// S3/LocalStack mock to satisfy a real S3 call against.
+// Keeps the file in memory (req.file.buffer). The service layer then writes
+// the buffer to backend/uploads/ via utils/file-storage.js. Used for a
+// teacher attaching reference material to an assignment, and for a
+// submission (staff on a student's behalf, or the student via the portal).
 export function uploadMemory(fieldName = "file") {
   const upload = multer({
     storage: multer.memoryStorage(),
@@ -71,4 +60,34 @@ export function absoluteUploadPath(storedPath) {
   if (!resolved.startsWith(UPLOAD_ROOT + path.sep))
     throw new AppError("Invalid file reference.", 400);
   return resolved;
+}
+
+const CSV_MIME_TYPES = new Set(["text/csv", "application/csv", "application/vnd.ms-excel", "text/plain"]);
+const MAX_CSV_BYTES = 5 * 1024 * 1024; // 5MB
+
+// Memory upload for the bulk student CSV import. Browsers (especially on
+// Windows) report .csv files under several MIME types, so the extension is
+// accepted as well.
+export function uploadCsvMemory(fieldName = "file") {
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_CSV_BYTES, files: 1 },
+    fileFilter: (req, file, cb) => {
+      const looksLikeCsv = CSV_MIME_TYPES.has(file.mimetype) || /\.csv$/i.test(file.originalname || "");
+      if (!looksLikeCsv) return cb(new AppError("Only .csv files can be imported.", 400));
+      return cb(null, true);
+    },
+  }).single(fieldName);
+
+  return (req, res, next) => {
+    upload(req, res, (err) => {
+      if (!err) return next();
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE")
+          return next(new AppError("CSV file is too large. Maximum size is 5MB.", 400));
+        return next(new AppError(`Upload error: ${err.message}`, 400));
+      }
+      return next(err);
+    });
+  };
 }

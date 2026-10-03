@@ -65,20 +65,8 @@ function storedPathFor(studentId, academicYearId) {
 
 // Generates a report card for every actively enrolled student in a
 // classroom, writes each PDF to disk (same uploads root and path-traversal
-// guard originally shared with assignment submissions), and fires a
+// guard shared with assignment attachments and submissions), and fires a
 // "report_card_ready" notification per student.
-//
-// Deliberately NOT migrated to S3 alongside assignment attachments and
-// staff-recorded submissions (see s3-storage.js) even though the shape
-// of the change would be identical: this is the one upload path with an
-// integration test (report-card-auto-generate.integration.test.js) that
-// asserts a full generate-then-download round trip, and this project's
-// CI has no S3/LocalStack mock — only Mongo and Redis service containers.
-// Moving this to real S3 calls would make that currently-green test fail
-// on every run, since there's no AWS credential or endpoint available in
-// CI to satisfy them. Once CI has a mocked S3 endpoint (e.g. via an
-// s3rver/LocalStack service container), this can move to S3 the same way
-// the other two did.
 export const generateReportCardsForClassroom = async (classroomId, academicYearId) => {
   const enrollments = await Enrollment.find({ classroom: classroomId, academicYear: academicYearId, status: "active" })
     .populate("student", "name studentId")

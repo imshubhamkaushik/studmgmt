@@ -1,66 +1,71 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { S3Client } from "@aws-sdk/client-s3";
-import { getImportJobStatus } from "../src/services/import-job.service.js";
+import { parseCsv } from "../src/utils/csv.js";
+import { parseStudentCsv, validateStudentRows, processImportJob } from "../src/services/import-job.service.js";
 
-function fakeDocClient(item) {
-  return { send: async () => ({ Item: item }) };
-}
-
-// Presigning is pure local signing, not a network call — a real S3Client
-// with throwaway static credentials works without AWS access, same as
-// lambdas/get-upload-url's tests.
-const s3Client = new S3Client({ region: "us-east-1", credentials: { accessKeyId: "test", secretAccessKey: "test" } });
-
-const opts = (job) => ({
-  jobsTable: "test-jobs",
-  importsBucket: "test-bucket",
-  docClient: fakeDocClient(job),
-  s3Client,
+test("parseCsv handles quotes, escaped quotes, BOM and CRLF", () => {
+  const rows = parseCsv('\uFEFFName,Class\r\n"Rao, Amelia",10\r\n"Say ""hi""",9\r\n\r\n');
+  assert.deepEqual(rows, [
+    ["Name", "Class"],
+    ["Rao, Amelia", "10"],
+    ['Say "hi"', "9"],
+  ]);
 });
 
-test("returns 404 when the job doesn't exist", async () => {
-  await assert.rejects(
-    () => getImportJobStatus("missing-job", { sub: "admin-1", role: "admin" }, opts(undefined)),
-    (err) => err.statusCode === 404,
+test("parseStudentCsv maps headers (including 'Date of Birth') and numbers rows from 2", () => {
+  const rows = parseStudentCsv("Name,Class,Section,Roll No,Date of Birth\nAmelia Rao,10,A,12,2012-05-01\n");
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].rowNumber, 2);
+  assert.deepEqual(rows[0].raw, {
+    name: "Amelia Rao",
+    class: "10",
+    section: "A",
+    rollNo: "12",
+    dob: "2012-05-01",
+    status: "active",
+  });
+});
+
+test("parseStudentCsv rejects files missing required columns or data rows", () => {
+  assert.throws(() => parseStudentCsv("Name,Class\nA,1\n"), (e) => e.statusCode === 400);
+  assert.throws(() => parseStudentCsv("Name,Class,Section,RollNo,DOB\n"), (e) => e.statusCode === 400);
+});
+
+test("validateStudentRows separates valid rows, invalid rows and in-file duplicates", () => {
+  const rows = parseStudentCsv(
+    [
+      "Name,Class,Section,RollNo,DOB",
+      "Amelia Rao,10,A,1,2012-05-01",
+      "B,10,A,2,2012-05-01", // name too short
+      "Carl Doe,10,A,1,2012-06-01", // duplicate class/section/roll of row 2
+      "Dina Roe,10,A,x,2012-06-01", // bad roll number
+      "Evan Poe,10,B,1,2012-02-31", // impossible date
+    ].join("\n"),
   );
+  const { valid, errors } = validateStudentRows(rows);
+  assert.equal(valid.length, 1);
+  assert.equal(valid[0].student.name, "Amelia Rao");
+  assert.deepEqual(errors.map((e) => e.rowNumber), [3, 4, 5, 6]);
+  assert.ok(errors.every((e) => e.stage === "validation" && e.message));
 });
 
-test("the job creator can view their own job", async () => {
-  const job = { jobId: "job-1", status: "queued", createdBy: "staff-1", queuedCount: 3 };
-  const result = await getImportJobStatus("job-1", { sub: "staff-1", role: "staff" }, opts(job));
-  assert.equal(result.status, "queued");
-  assert.equal(result.queuedCount, 3);
-});
+test("processImportJob counts successes, records per-row failures and completes", async () => {
+  const updates = [];
+  const Model = { updateOne: async (filter, update) => updates.push(update) };
+  const rows = [
+    { rowNumber: 2, raw: { name: "A One", class: "1", section: "A", rollNo: "1", dob: "2012-01-01" }, student: { name: "A One" } },
+    { rowNumber: 3, raw: { name: "B Two", class: "1", section: "A", rollNo: "2", dob: "2012-01-01" }, student: { name: "B Two" } },
+  ];
+  const createStudentFn = async (student) => {
+    if (student.name === "B Two") throw new Error("Roll number already exists");
+  };
 
-test("an admin can view any job, not just their own", async () => {
-  const job = { jobId: "job-2", status: "completed", createdBy: "staff-1" };
-  const result = await getImportJobStatus("job-2", { sub: "admin-1", role: "admin" }, opts(job));
-  assert.equal(result.status, "completed");
-});
+  await processImportJob("job-1", rows, null, { createStudentFn, Model });
 
-test("a staff member who didn't create the job is rejected", async () => {
-  const job = { jobId: "job-3", status: "queued", createdBy: "staff-1" };
-  await assert.rejects(
-    () => getImportJobStatus("job-3", { sub: "staff-2", role: "staff" }, opts(job)),
-    (err) => err.statusCode === 403,
-  );
-});
-
-test("presigns an error report URL only when the job actually has one", async () => {
-  const withReport = { jobId: "job-4", status: "queued", createdBy: "admin-1", errorReportKey: "reports/job-4-errors.json" };
-  const result = await getImportJobStatus("job-4", { sub: "admin-1", role: "admin" }, opts(withReport));
-  assert.ok(result.errorReportUrl?.startsWith("https://test-bucket.s3."));
-
-  const withoutReport = { jobId: "job-5", status: "completed", createdBy: "admin-1" };
-  const result2 = await getImportJobStatus("job-5", { sub: "admin-1", role: "admin" }, opts(withoutReport));
-  assert.equal(result2.errorReportUrl, null);
-});
-
-test("missing counters default to sensible values instead of undefined", async () => {
-  const job = { jobId: "job-6", status: "awaiting_upload", createdBy: "admin-1" };
-  const result = await getImportJobStatus("job-6", { sub: "admin-1", role: "admin" }, opts(job));
-  assert.equal(result.processedCount, 0);
-  assert.equal(result.successCount, 0);
-  assert.equal(result.totalRows, null);
+  assert.equal(updates.length, 3);
+  assert.deepEqual(updates[0], { $inc: { processedCount: 1, successCount: 1 } });
+  assert.equal(updates[1].$inc.failureCount, 1);
+  assert.equal(updates[1].$push.rowErrors.rowNumber, 3);
+  assert.equal(updates[1].$push.rowErrors.stage, "import");
+  assert.equal(updates[2].$set.status, "completed");
 });

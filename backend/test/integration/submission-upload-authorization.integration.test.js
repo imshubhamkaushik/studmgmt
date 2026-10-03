@@ -47,6 +47,13 @@ async function loginAndGetPortalToken(studentId, password) {
   return body.data.accessToken;
 }
 
+
+function submissionForm(name = "essay.pdf") {
+  const form = new FormData();
+  form.append("file", new Blob(["%PDF-1.4 test"], { type: "application/pdf" }), name);
+  return form;
+}
+
 before(async () => {
   if (!uri) throw new Error("TEST_MONGODB_URI is required for integration tests.");
   if (!secret || secret.length < 32) throw new Error("JWT_SECRET must be configured for integration tests.");
@@ -66,7 +73,7 @@ beforeEach(async () => {
   await Promise.all(Object.values(collections).map((c) => c.deleteMany({})));
 });
 
-test("a student enrolled in the assignment's classroom can request an upload URL", async () => {
+test("a student enrolled in the assignment's classroom can submit a file", async () => {
   const teacher = await createUser({ name: "Teacher", email: "sub-teacher@test.local", password: "StrongPassword123!", role: "teacher" });
 
   const year = await AcademicYear.create({ name: "2026-27", startDate: new Date("2026-06-01"), endDate: new Date("2027-04-30"), isActive: true });
@@ -84,16 +91,17 @@ test("a student enrolled in the assignment's classroom can request an upload URL
 
   const portalToken = await loginAndGetPortalToken(student.studentId, password);
 
-  const response = await request(`/api/v1/portal/assignment-submissions/assignment/${assignment._id}/upload-url`, {
+  const response = await request(`/api/v1/portal/assignment-submissions/assignment/${assignment._id}`, {
     method: "POST",
-    headers: { authorization: `Bearer ${portalToken}`, "content-type": "application/json" },
-    body: JSON.stringify({ originalName: "essay.pdf", mimeType: "application/pdf" }),
+    headers: { authorization: `Bearer ${portalToken}` },
+    body: submissionForm(),
   });
 
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 201);
   const body = await response.json();
-  assert.ok(body.data.uploadUrl);
-  assert.ok(body.data.submissionId);
+  assert.equal(body.data.status, "submitted");
+  assert.equal(body.data.file.storageType, "local");
+  assert.ok(body.data.file.storedPath.startsWith("submissions/"));
 });
 
 test("a student NOT enrolled in the assignment's classroom is rejected, not silently allowed", async () => {
@@ -117,10 +125,10 @@ test("a student NOT enrolled in the assignment's classroom is rejected, not sile
 
   const portalToken = await loginAndGetPortalToken(outsideStudent.studentId, password);
 
-  const response = await request(`/api/v1/portal/assignment-submissions/assignment/${assignment._id}/upload-url`, {
+  const response = await request(`/api/v1/portal/assignment-submissions/assignment/${assignment._id}`, {
     method: "POST",
-    headers: { authorization: `Bearer ${portalToken}`, "content-type": "application/json" },
-    body: JSON.stringify({ originalName: "answers.pdf", mimeType: "application/pdf" }),
+    headers: { authorization: `Bearer ${portalToken}` },
+    body: submissionForm(),
   });
 
   assert.equal(response.status, 403);
@@ -144,10 +152,10 @@ test("a student with no enrollment at all is rejected", async () => {
 
   const portalToken = await loginAndGetPortalToken(unenrolledStudent.studentId, password);
 
-  const response = await request(`/api/v1/portal/assignment-submissions/assignment/${assignment._id}/upload-url`, {
+  const response = await request(`/api/v1/portal/assignment-submissions/assignment/${assignment._id}`, {
     method: "POST",
-    headers: { authorization: `Bearer ${portalToken}`, "content-type": "application/json" },
-    body: JSON.stringify({ originalName: "report.pdf", mimeType: "application/pdf" }),
+    headers: { authorization: `Bearer ${portalToken}` },
+    body: submissionForm(),
   });
 
   assert.equal(response.status, 403);

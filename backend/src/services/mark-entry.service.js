@@ -108,10 +108,7 @@ export const bulkUpsertMarks = async (examId, entries, user, requestId) => {
 
   // Awaited rather than fire-and-forget: for a classroom-sized batch this
   // adds real latency to the response, but it keeps the trigger
-  // deterministic and testable. This exact block — "generate N PDFs and
-  // notify N people, synchronously, inside a request handler" — is the
-  // piece that becomes an EventBridge + Lambda hand-off once this app
-  // moves onto AWS; for now, correctness wins over shaving milliseconds.
+  // deterministic and testable.
   await maybeAutoGenerateReportCards(exam);
 
   return results;
